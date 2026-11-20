@@ -38,6 +38,7 @@ export PATH=/usr/local/apps/latex/2022/bin/x86_64-linux:$PATH
 
 ## Notes
 
-- The teaching example has a button that plays *Loop Invariants* by J. P. Dougherty.
-  The audio file is not in this repository. Put `loop-invariants.mp3` in `slides/media/` to use it.
+- The teaching example has a button that plays *Loop Invariants* by J. P. Dougherty
+  (`slides/media/loop-invariants.mp3`). Local-file buttons need a desktop PDF viewer
+  (Acrobat, Okular, Skim) and the `media/` folder next to the PDF.
 - The OSU and OSU-Cascades logos are university marks; follow OSU brand guidelines when using them.

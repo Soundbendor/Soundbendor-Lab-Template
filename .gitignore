@@ -14,7 +14,3 @@
 *.fdb_latexmk
 *.synctex.gz
 main.pdf
-
-# Third-party audio for teaching.tex (not redistributable); keep it locally
-slides/media/*.mp3
-slides/media/*.wav
