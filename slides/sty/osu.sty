@@ -1,0 +1,646 @@
+%==============================================================================
+% osu.sty -- Oregon State University / Soundbendor Lab Beamer style
+%   by Patrick Donnelly
+%   v2.0 (2026-11-20): rewritten as a package with options; merged the forked
+%   osu.tex additions (operators, highlight commands, listings, algorithm2e).
+%
+% Usage (in main.tex):
+%
+%   \documentclass[10pt,aspectratio=169,xcolor=table]{beamer}
+%   \usepackage[campus=corvallis, mode=research]{sty/osu}
+%
+% Options (all optional, defaults first):
+%   campus    = corvallis | cascades        which OSU logo
+%   mode      = research | teaching         title page + frame decorations
+%   lab       = auto | true | false         Soundbendor logo (auto: research only)
+%   framelogo = true | false                OSU logo in the frame-title bar
+%   footer    = true | false                teaching: course ID bottom-left
+%   bullets   = square | circle             itemize bullet family
+%   enumerate = arabic | Alph | alph | roman | Roman   default enumerate label
+%   font      = fira | default              Fira Sans (metropolis look) or CM sans
+%   code      = Python | C++ | Java | ...   default listings language
+%   todo      = true | false                show or hide \todo{} notes
+%   logopath  = sty/logo/                   where the logo images live
+%   legacy    = false | true                keep old names (\defn, \key, ...)
+%   metropolis= {...}                       extra options passed to metropolis
+%
+% The same switches also work as commands in the preamble:
+%   \campus{Cascades}   \presentmode{teaching}
+%
+% Everything is documented in README.md.
+%==============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sty/osu}[2026/11/20 v2.0 OSU / Soundbendor beamer style]
+
+\RequirePackage{etoolbox}
+\RequirePackage{pgfopts}
+\RequirePackage{iftex}
+
+%==============================================================================
+% 1. Options
+%==============================================================================
+\newif\ifosu@framelogo   \osu@framelogotrue
+\newif\ifosu@footer      \osu@footertrue
+\newif\ifosu@todo        \osu@todotrue
+\newif\ifosu@legacy      \osu@legacyfalse
+\newif\ifosu@research    % set at \begin{document}
+\newif\ifosu@showlab     % set at \begin{document}
+
+\def\osu@campus{corvallis}
+\def\osu@mode{research}
+\def\osu@lab{auto}
+\def\osu@bullets{square}
+\def\osu@enumerate{arabic}
+\def\osu@font{fira}
+\def\osu@code{Python}
+\def\osu@logopath{sty/logo/}
+\def\osu@metro{}
+
+\pgfkeys{
+  /osu/.cd,
+  campus/.code      = {\lowercase{\def\osu@campus{#1}}},
+  mode/.code        = {\lowercase{\def\osu@mode{#1}}},
+  lab/.code         = {\lowercase{\def\osu@lab{#1}}},
+  lab/.default      = true,
+  framelogo/.is if  = osu@framelogo,
+  footer/.is if     = osu@footer,
+  todo/.is if       = osu@todo,
+  legacy/.is if     = osu@legacy,
+  bullets/.store in = \osu@bullets,
+  enumerate/.store in = \osu@enumerate,
+  font/.store in    = \osu@font,
+  code/.store in    = \osu@code,
+  logopath/.store in= \osu@logopath,
+  metropolis/.store in = \osu@metro,
+}
+\ProcessPgfPackageOptions{/osu}
+
+% Preamble commands (same effect as the options; kept from v1)
+\newcommand*{\campus}[1]{\lowercase{\def\osu@campus{#1}}}
+\newcommand*{\presentmode}[1]{\lowercase{\def\osu@mode{#1}}}
+\newcommand*{\setlablogo}[1]{\lowercase{\def\osu@lab{#1}}}
+
+%==============================================================================
+% 2. Theme and packages
+%==============================================================================
+\edef\osu@tmp{\noexpand\usetheme[block=fill,\osu@metro]{metropolis}}
+\osu@tmp
+
+% --- Fonts: metropolis is designed for Fira Sans. Under XeLaTeX/LuaLaTeX
+%     metropolis loads it itself; under pdfLaTeX we load the Type 1 version.
+\ifdefstring{\osu@font}{fira}{%
+  \ifpdftex
+    \RequirePackage[T1]{fontenc}
+    \RequirePackage[sfdefault]{FiraSans}
+    \RequirePackage[scale=0.85]{FiraMono}
+  \fi
+}{}
+
+% --- Colors (shared with the poster template)
+\RequirePackage{sty/osucolors}
+
+% --- Math
+\RequirePackage{amsmath,amssymb,mathtools}
+\RequirePackage{cancel}
+
+% --- Tables
+\RequirePackage{booktabs,multirow,array,tabularx,colortbl,diagbox}
+\@ifpackagewith{xcolor}{table}{}{%
+  \PackageInfo{sty/osu}{For \string\rowcolors, add xcolor=table to the
+    \string\documentclass\space options}}
+
+% --- Layout / text
+\RequirePackage{multicol}
+\RequirePackage{ragged2e}
+\RequirePackage{xspace}
+\RequirePackage[normalem]{ulem}
+\RequirePackage{appendixnumberbeamer}
+\RequirePackage[scale=2]{ccicons}
+\RequirePackage{fontawesome5}
+
+% --- Figures
+\RequirePackage{subcaption}
+\RequirePackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{dateplot}
+\usetikzlibrary{positioning,arrows.meta,calc,shapes,shadows,fit,backgrounds}
+% TikZ styles (frame bodies cannot define styles with #1, so they live here)
+%   \node[osunode=pinestand] {Text};   \draw[osuarrow] (a) -- (b);
+\tikzset{
+  osunode/.style={draw=#1, fill=#1!12, rounded corners=3pt, thick,
+    minimum height=9mm, minimum width=20mm, align=center, font=\small},
+  osunode/.default=beaver,
+  osuarrow/.style={-{Stealth[length=2.5mm]}, thick, #1},
+  osuarrow/.default=crater,
+}
+
+% --- Code and pseudocode
+\RequirePackage{listings}
+\RequirePackage{fancyvrb}
+\RequirePackage[algoruled,noline,noend]{algorithm2e}
+
+% --- Boxes
+\RequirePackage[most]{tcolorbox}
+
+% --- Media and links
+\RequirePackage{multimedia}   % \movie (Okular / Acrobat)
+\RequirePackage{animate}      % frame-by-frame animations
+\RequirePackage{qrcode}
+
+\hypersetup{
+  colorlinks = true,
+  linkcolor  = beaver,
+  citecolor  = beaver,
+  filecolor  = beaver,
+  urlcolor   = beaver,
+}
+\urlstyle{same}
+
+%==============================================================================
+% 3. Beamer colors and templates
+%==============================================================================
+\setbeamercolor{normal text}{fg=paddletail!85, bg=bucktooth}
+\setbeamercolor{frametitle}{fg=bucktooth, bg=beaver!90}
+\setbeamercolor{title separator}{fg=beaver}
+\setbeamercolor{progress bar}{fg=beaver, bg=beaver!20}
+\setbeamercolor{alerted text}{fg=solarflare}
+\setbeamercolor{example text}{fg=pinestand}
+\setbeamercolor{footnote}{fg=crater}
+\setbeamercolor{footnote mark}{fg=beaver}
+
+% No roman numerals on continued frames ([allowframebreaks])
+\setbeamertemplate{frametitle continuation}{}
+
+% Blocks: rounded with shadow (v1 look)
+\setbeamertemplate{blocks}[rounded][shadow=true]
+\setbeamercolor{block title example}{fg=pinestand}
+\setbeamerfont{block title example}{series=\bfseries}
+\setbeamercolor{block title alerted}{fg=beaver}
+\setbeamerfont{block title alerted}{series=\bfseries}
+
+% Captions: no "Figure"/"Table" label, ragged right, subfigures (a), (b)
+\captionsetup{labelformat=empty, labelsep=none, justification=raggedright,
+              singlelinecheck=false, font=small}
+\captionsetup[sub]{labelformat=parens, labelsep=space, font=footnotesize}
+
+%==============================================================================
+% 4. Logos
+%==============================================================================
+% Files (in \osu@logopath):
+%   OSU-horizontal          Corvallis, title page (color)
+%   OSU-vertical-white      Corvallis, frame-title bar
+%   OSU-cascades            Cascades, title page (color)
+%   OSU-cascades-allwhite   Cascades, frame-title bar
+%   soundbendor             lab logo
+\newcommand*{\osu@titlelogoheight}{15mm}
+\newcommand*{\osu@framelogoheight}{7mm}
+\newcommand*{\osu@lablogoheight}{8mm}
+
+\newcommand{\osu@resolve}{%
+  \ifdefstring{\osu@mode}{teaching}{\osu@researchfalse}{\osu@researchtrue}%
+  \ifdefstring{\osu@lab}{auto}{%
+    \ifosu@research\osu@showlabtrue\else\osu@showlabfalse\fi}{%
+    \ifdefstring{\osu@lab}{true}{\osu@showlabtrue}{\osu@showlabfalse}}%
+  \ifdefstring{\osu@campus}{cascades}{%
+    \def\osu@titlelogo{\osu@logopath OSU-cascades}%
+    \def\osu@framelogofile{\osu@logopath OSU-cascades-allwhite}%
+    \renewcommand*{\osu@framelogoheight}{6mm}%
+  }{%
+    \def\osu@titlelogo{\osu@logopath OSU-horizontal}%
+    \def\osu@framelogofile{\osu@logopath OSU-vertical-white}%
+  }%
+  \def\osu@lablogo{\osu@logopath soundbendor}%
+}
+\AtBeginDocument{\osu@resolve}
+
+% Title page: research = OSU top-right, lab bottom-centre
+%             teaching = OSU bottom-right (lab, if lab=true, bottom-left)
+\titlegraphic{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \ifosu@research
+      \node[opacity=0.9,anchor=north east,xshift=-10pt,yshift=-5pt]
+        at (current page.north east)
+        {\includegraphics[height=\osu@titlelogoheight]{\osu@titlelogo}};
+    \else
+      \node[anchor=south east,xshift=-10pt,yshift=8pt]
+        at (current page.south east)
+        {\includegraphics[height=\osu@titlelogoheight]{\osu@titlelogo}};
+    \fi
+    \ifosu@showlab
+      \ifosu@research
+        \node[opacity=0.8,anchor=south] at (current page.south)
+          {\includegraphics[height=\osu@titlelogoheight]{\osu@lablogo}};
+      \else
+        \node[opacity=0.8,anchor=south west,xshift=10pt,yshift=8pt]
+          at (current page.south west)
+          {\includegraphics[height=\osu@titlelogoheight]{\osu@lablogo}};
+      \fi
+    \fi
+  \end{tikzpicture}%
+}
+
+% Every frame with a title: OSU logo in the title bar, lab logo (research)
+% or course ID (teaching) bottom-left.
+\addtobeamertemplate{frametitle}{}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \ifosu@framelogo
+      \node[opacity=0.85,anchor=north east,xshift=-6pt,yshift=-1pt]
+        at (current page.north east)
+        {\includegraphics[height=\osu@framelogoheight]{\osu@framelogofile}};
+    \fi
+    \ifosu@showlab
+      \node[opacity=0.6,anchor=south west,xshift=4pt]
+        at (current page.south west)
+        {\includegraphics[height=\osu@lablogoheight]{\osu@lablogo}};
+    \else\ifosu@footer\ifdefined\insertcourseid
+      \node[anchor=south west,xshift=8pt,yshift=6pt,
+            font=\tiny\sffamily,text=crater]
+        at (current page.south west)
+        {\insertcourseid\ \textperiodcentered\ \insertshorttitle};
+    \fi\fi\fi
+  \end{tikzpicture}%
+}
+
+%==============================================================================
+% 5. Teaching metadata
+%==============================================================================
+% \course{CS 331}{Introduction to Artificial Intelligence}
+%     -> subtitle "CS 331 -- Introduction to ..." and footer "CS 331"
+% \courseterm{Fall 2026}   -> \date
+% \instructor{Dr. Name}    -> \author
+\newcommand{\course}[2]{%
+  \gdef\insertcourseid{#1}\gdef\insertcoursename{#2}%
+  \subtitle{#1 -- #2}}
+\newcommand{\courseterm}[1]{\gdef\insertcourseterm{#1}\date{#1}}
+\newcommand{\instructor}[1]{\author{#1}}
+
+% Content that only appears in one mode (shared slides across decks)
+\newcommand{\researchonly}[1]{\ifosu@research#1\fi}
+\newcommand{\teachingonly}[1]{\ifosu@research\else#1\fi}
+
+%==============================================================================
+% 6. Lists
+%==============================================================================
+% Default enumerate label. (Redefining \theenumi does not work: beamer resets
+% it at \begin{document}.) Mini-templates such as [a)] still override this.
+\ifdefstring{\osu@enumerate}{Alph} {\setbeamertemplate{enumerate item}{\Alph{enumi}.}}{}
+\ifdefstring{\osu@enumerate}{alph} {\setbeamertemplate{enumerate item}{\alph{enumi})}}{}
+\ifdefstring{\osu@enumerate}{roman}{\setbeamertemplate{enumerate item}{\roman{enumi}.}}{}
+\ifdefstring{\osu@enumerate}{Roman}{\setbeamertemplate{enumerate item}{\Roman{enumi}.}}{}
+
+% Spacing (v1 values)
+\setlength\leftmargini  {2em}
+\setlength\leftmarginii {2em}
+\setlength\leftmarginiii{2em}
+\setlength\labelsep     {.5em}
+\setlength\labelwidth   {\leftmargini}
+\addtolength\labelwidth {-\labelsep}
+\def\@listi{\leftmargin\leftmargini
+            \topsep -4\p@ \@plus0\p@ \@minus0\p@
+            \parsep 0\p@
+            \itemsep0\p@ \@plus0\p@ \@minus0\p@}
+\let\@listI\@listi
+\def\@listii{\leftmargin\leftmarginii
+             \topsep 2\p@ \@plus1\p@ \@minus2\p@
+             \parsep 0\p@ \@plus\p@
+             \itemsep\parsep}
+\def\@listiii{\leftmargin\leftmarginiii
+              \topsep 2\p@ \@plus1\p@ \@minus2\p@
+              \parsep 0\p@ \@plus\p@
+              \itemsep\parsep}
+
+% Bullets
+\setbeamercolor{item}{fg=beaver!90}
+\setbeamercolor{description item}{fg=beaver!90}
+\defbeamertemplate{itemize item}{osusquare}%
+  {\tiny\raise.5ex\hbox{\donotcoloroutermaths$\blacksquare$}}
+\defbeamertemplate{itemize subitem}{osusquare}%
+  {\tiny\raise.4ex\hbox{\donotcoloroutermaths$\triangleright$}}
+\defbeamertemplate{itemize subsubitem}{osusquare}%
+  {\tiny\raise.3ex\hbox{\donotcoloroutermaths$\square$}}
+\defbeamertemplate{itemize item}{osucircle}%
+  {\small\raise.2ex\hbox{\donotcoloroutermaths$\bullet$}}
+\defbeamertemplate{itemize subitem}{osucircle}%
+  {\small\raise.1ex\hbox{\donotcoloroutermaths$\circ$}}
+\defbeamertemplate{itemize subsubitem}{osucircle}%
+  {\scriptsize\raise.1ex\hbox{\donotcoloroutermaths$\bullet$}}
+\ifdefstring{\osu@bullets}{circle}%
+  {\setbeamertemplate{items}[osucircle]}%
+  {\setbeamertemplate{items}[osusquare]}
+
+%==============================================================================
+% 7. Text highlighting (semantic markup)
+%==============================================================================
+%   \term{x}      a term being defined           Beaver, bold
+%   \keyword{x}   technical keyword              Pine Stand, slanted
+%   \keyidea{x}   the key idea on the slide      Stratosphere, bold
+%   \var{x}       a variable named in prose      Pine Stand, italic
+%   \sym{x}       a symbol / operator / sign     Pine Stand, bold
+%   \mat{x}       a matrix or tensor             Hop Bine
+%   \stress{x}    spoken emphasis                Beaver, slanted
+%   \code{x}      inline code (no special chars) Stratosphere, mono
+%   \hl{x}        highlighter pen                Candela background
+%   \todo{x}      a note to self (todo=false hides them)
+\newcommand{\term}[1]{\textbf{\textcolor{beaver}{#1}}}
+\newcommand{\keyword}[1]{\textsl{\textcolor{pinestand}{#1}}}
+\newcommand{\keyidea}[1]{\textbf{\textcolor{stratosphere}{#1}}}
+\newcommand{\var}[1]{\textcolor{pinestand}{\textit{#1}}}
+\newcommand{\sym}[1]{\textbf{\textcolor{pinestand}{#1}}}
+\newcommand{\mat}[1]{\textcolor{hopbine}{#1}}
+\newcommand{\stress}[1]{\textsl{\textcolor{beaver}{#1}}}
+\newcommand{\code}[1]{\texttt{\textcolor{stratosphere}{#1}}}
+\newcommand{\hl}[1]{{\setlength{\fboxsep}{1pt}\colorbox{candela}{\strut#1}}}
+\newcommand{\todo}[1]{\ifosu@todo{\setlength{\fboxsep}{2pt}%
+  \colorbox{luminance}{\scriptsize\bfseries\color{paddletail}%
+  \faExclamationTriangle\ TODO: #1}}\fi}
+
+% Overlay-aware strike-through:  \sout<2->{wrong answer}
+\renewcommand<>{\sout}[1]{\alt#2{\beameroriginal{\sout}{#1}}{#1}}
+
+% Fill in the blank: hidden until the overlay, e.g. \blank<2->{invariant}
+\newcommand<>{\blank}[1]{%
+  \alt#2{\underline{\textcolor{beaver}{\,#1\,}}}{\underline{\phantom{\,#1\,}}}}
+
+% Legacy names from the forked osu.tex (legacy=true). \mark is a TeX
+% primitive (page marks), so the old \renewcommand{\mark} is NOT restored.
+\ifosu@legacy
+  \newcommand{\defn}[1]{\term{#1}}
+  \newcommand{\key}[1]{\keyidea{#1}}
+  \newcommand{\sign}[1]{\sym{#1}}
+\fi
+
+%==============================================================================
+% 8. Math operators
+%==============================================================================
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\newcommand*{\argminl}{\argmin\limits}
+\newcommand*{\argmaxl}{\argmax\limits}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\softmax}{softmax}
+\newcommand*{\E}{\mathbb{E}}
+\newcommand*{\R}{\mathbb{R}}
+\newcommand*{\N}{\mathbb{N}}
+\newcommand*{\Z}{\mathbb{Z}}
+\newcommand*{\T}{^{\mkern-1.5mu\mathsf{T}}}            % transpose: A\T
+\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}            % \abs{x}, \abs*{x}
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}           % \norm{x}
+\newcommand*{\given}{\nonscript\;\middle\vert\nonscript\;} % P(A \given B) inside \left(\right)
+
+%==============================================================================
+% 9. Callout boxes
+%==============================================================================
+% Every box takes an optional title and an optional overlay spec:
+%     \begin{question}<2->[Pop quiz] ... \end{question}
+%
+% Make your own:  \osunewbox{envname}{color}{icon}{Default Title}
+\tcbset{
+  osubox/.style n args={3}{
+    enhanced, sharp corners=west, arc=2pt,
+    colback=#1!6, colframe=#1, boxrule=0pt, leftrule=2.5pt,
+    colbacktitle=#1!16, coltitle=#1!75!black,
+    fonttitle=\bfseries\small, fontupper=\small,
+    title={#2\ifstrempty{#3}{}{\ #3}},
+    titlerule=0pt, toptitle=1.5pt, bottomtitle=1.5pt,
+    left=6pt, right=6pt, top=3pt, bottom=3pt,
+    before skip=4pt, after skip=4pt,
+  },
+}
+\newcommand{\osunewbox}[4]{%
+  \newenvironment<>{#1}[1][#4]{%
+    \begin{actionenv}##2%
+    \begin{tcolorbox}[osubox={#2}{#3}{##1}]}%
+    {\end{tcolorbox}\end{actionenv}}}
+
+% Teaching
+\osunewbox{objectives}{beaver}      {\faBullseye}           {Learning Objectives}
+\osunewbox{question}  {stratosphere}{\faQuestionCircle}     {Question}
+\osunewbox{answer}    {pinestand}   {\faCheckCircle}        {Answer}
+\osunewbox{tryit}     {hightide}    {\faPencil*}            {Try It}
+\osunewbox{pitfall}   {solarflare}  {\faExclamationTriangle}{Common Pitfall}
+\osunewbox{takeaway}  {beaver}      {\faKey}                {Key Takeaway}
+\osunewbox{aside}     {crater}      {\faInfoCircle}         {Aside}
+\osunewbox{funfact}   {hopbine}     {\faLightbulb}          {Fun Fact}
+% Research
+\osunewbox{contribution}{beaver}    {\faTrophy}             {Contribution}
+\osunewbox{finding}   {pinestand}   {\faChartLine}          {Finding}
+\osunewbox{limitation}{highdesert}  {\faBalanceScale}       {Limitation}
+\osunewbox{futurework}{stratosphere}{\faRoute}              {Future Work}
+
+% Numbered research questions and hypotheses: RQ1, RQ2, ... / H1, H2, ...
+%   \begin{rq}[Does it work?] ... \end{rq}      \ref works with \label
+\newcounter{rq}\renewcommand{\therq}{RQ\arabic{rq}}
+\newcounter{hypothesis}\renewcommand{\thehypothesis}{H\arabic{hypothesis}}
+\resetcounteronoverlays{rq}
+\resetcounteronoverlays{hypothesis}
+\newenvironment<>{rq}[1][]{%
+  \begin{actionenv}#2\refstepcounter{rq}%
+  \begin{tcolorbox}[osubox={starcanvas}{\faSearch\ \therq\ifstrempty{#1}{}{:}}{#1}]}%
+  {\end{tcolorbox}\end{actionenv}}
+\newenvironment<>{hypothesis}[1][]{%
+  \begin{actionenv}#2\refstepcounter{hypothesis}%
+  \begin{tcolorbox}[osubox={roguewave}{\faFlask\ \thehypothesis\ifstrempty{#1}{}{:}}{#1}]}%
+  {\end{tcolorbox}\end{actionenv}}
+
+% Multiple-choice question with an overlay reveal:
+%   \begin{quiz}[Clicker question]
+%     What does this print?
+%     \begin{choices}
+%       \choice 42
+%       \correctchoice<2->{It never halts}
+%     \end{choices}
+%   \end{quiz}
+\osunewbox{quiz}{stratosphere}{\faPoll}{Quick Check}
+\newenvironment{choices}{\begin{enumerate}[(A)]}{\end{enumerate}}
+\newcommand{\choice}{\item}
+\newcommand<>{\correctchoice}[1]{%
+  \item \alt#2{\textcolor{pinestand}{\textbf{#1}\ \faCheck}}{#1}}
+
+% Plain rounded frame (v1 \roundbox, now tcolorbox)
+\newtcolorbox{roundbox}[1][]{enhanced, arc=4pt, boxrule=0.5pt,
+  colframe=starcanvas, colback=white, left=6pt, right=6pt, top=6pt,
+  bottom=6pt, #1}
+
+% Pull quote:  \begin{bigquote}[Ada Lovelace] ... \end{bigquote}
+\newenvironment{bigquote}[1][]{%
+  \def\osu@quoteby{#1}%
+  \begin{tcolorbox}[enhanced, frame hidden, colback=white, left=28pt,
+    right=10pt, fontupper=\large\itshape,
+    overlay={\node[anchor=north west, text=beaver!60, font=\fontsize{48}{48}\selectfont]
+      at ([xshift=2pt,yshift=8pt]frame.north west) {``};},
+    lower separated=false, fontlower=\small\upshape\color{crater}, halign lower=right]}%
+  {\ifx\osu@quoteby\@empty\else\tcblower ---\,\osu@quoteby\fi\end{tcolorbox}}
+
+% Big number callout:  \bignumber{97\%}{of slides contain at least one typo}
+\newcommand{\bignumber}[3][beaver]{%
+  \begingroup\centering
+  {\fontsize{36}{40}\selectfont\bfseries\textcolor{#1}{#2}}\par\smallskip
+  {\small #3}\par\endgroup}
+
+% Inline badge:  \badge{new}  \badge[pinestand]{accepted}
+\newcommand{\badge}[2][beaver]{%
+  \tcbox[on line, colback=#1, colframe=#1, coltext=white, arc=2pt,
+    boxsep=0pt, left=3pt, right=3pt, top=1pt, bottom=1pt,
+    fontupper=\scriptsize\bfseries]{#2}}
+
+%==============================================================================
+% 10. Slide helpers
+%==============================================================================
+% Small citation in the bottom-right corner:  \slidecite{Smith et al., 2025}
+\newcommand{\slidecite}[1]{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=south east, xshift=-30pt, yshift=4pt, font=\tiny,
+          text=crater, align=right] at (current page.south east) {#1};
+  \end{tikzpicture}}
+
+% QR code that is also a link:  \qrlink{https://...}  or  \qrlink[3cm]{...}
+\newcommand{\qrlink}[2][2cm]{\href{#2}{\qrcode[height=#1]{#2}}}
+
+% Full-bleed background image (use in a [plain] frame): \fullbleed{img/x}
+\newcommand{\fullbleed}[1]{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[inner sep=0pt] at (current page.center)
+      {\includegraphics[width=\paperwidth,height=\paperheight]{#1}};
+  \end{tikzpicture}}
+
+% Button that opens a media file in the system player.
+%   \mediabutton{media/song.mp3}{Play the song}
+% (Embedded Flash players such as media9's APlayer.swf no longer work in any
+%  PDF viewer; keep the media folder next to the PDF.)
+\newcommand{\mediabutton}[2]{%
+  \href{run:#1}{\tcbox[on line, colback=beaver, colframe=beaver,
+    coltext=white, arc=3pt, boxsep=1pt, left=6pt, right=6pt, top=2pt,
+    bottom=2pt, fontupper=\small\bfseries]{\faPlay\ #2}}}
+
+% Colour swatch and the whole OSU palette (handy for a reference slide)
+\newcommand{\colorswatch}[2]{%
+  \textcolor{#1}{\rule{1.1em}{1.1em}}\enspace\textbf{\textcolor{#1}{#2}}}
+\newcommand{\osupalette}{%
+  {\footnotesize\setlength{\tabcolsep}{6pt}\renewcommand{\arraystretch}{1.6}%
+  \begin{tabular}{@{}llll@{}}
+    \multicolumn{1}{@{}l}{\textcolor{crater}{\scriptsize PRIMARY}} &
+    \multicolumn{1}{l}{\textcolor{crater}{\scriptsize NORMAL}} &
+    \multicolumn{1}{l}{\textcolor{crater}{\scriptsize LIGHT / DARK}} &
+    \multicolumn{1}{l@{}}{\textcolor{crater}{\scriptsize NEUTRALS}} \\
+    \colorswatch{beaver}{Beaver}            & \colorswatch{pinestand}{Pine Stand}
+      & \colorswatch{reindeermoss}{Reindeer Moss} & \colorswatch{till}{Till} \\
+    \colorswatch{paddletail}{Paddletail}    & \colorswatch{hightide}{High Tide}
+      & \colorswatch{seafoam}{Seafoam}            & \colorswatch{coastline}{Coastline} \\
+    \fcolorbox{coastline}{white}{\rule{0pt}{0.9em}\rule{0.9em}{0pt}}\enspace\textbf{Bucktooth}
+                                            & \colorswatch{luminance}{Luminance}
+      & \colorswatch{candela}{Candela}            & \colorswatch{highdesert}{High Desert} \\
+                                            & \colorswatch{stratosphere}{Stratosphere}
+      & \colorswatch{moondust}{Moondust}          & \colorswatch{crater}{Crater} \\
+    & & \colorswatch{hopbine}{Hop Bine} & \\
+    & & \colorswatch{roguewave}{Rogue Wave} & \\
+    & & \colorswatch{solarflare}{Solar Flare} & \\
+    & & \colorswatch{starcanvas}{Star Canvas} & \\
+  \end{tabular}}}
+
+%==============================================================================
+% 11. Plots: OSU colour cycle for pgfplots
+%==============================================================================
+\pgfplotscreateplotcyclelist{osu}{%
+  {beaver, fill=beaver, mark=*},
+  {stratosphere, fill=stratosphere, mark=square*},
+  {pinestand, fill=pinestand, mark=triangle*},
+  {luminance, fill=luminance, mark=diamond*},
+  {hightide, fill=hightide, mark=pentagon*},
+  {highdesert, fill=highdesert, mark=otimes*},
+  {starcanvas, fill=starcanvas, mark=oplus*},
+}
+\pgfplotscreateplotcyclelist{osubar}{%
+  {beaver!80!black, fill=beaver},
+  {stratosphere!80!black, fill=stratosphere},
+  {pinestand!80!black, fill=pinestand},
+  {luminance!80!black, fill=luminance},
+  {hightide!80!black, fill=hightide},
+  {highdesert!80!black, fill=highdesert},
+  {starcanvas!80!black, fill=starcanvas},
+}
+\pgfplotsset{
+  bar cycle list/.style={/pgfplots/cycle list name=osubar},
+  every axis/.append style={cycle list name=osu, tick label style={font=\footnotesize},
+    label style={font=\small}, legend style={font=\footnotesize, draw=none,
+    fill=none}, axis line style={crater}, every tick/.style={crater}},
+}
+
+%==============================================================================
+% 12. Code listings
+%==============================================================================
+% Every lstlisting is drawn in a soft grey rounded box (frame needs [fragile]).
+% Escape to LaTeX inside code with (* ... *), e.g. (*\term{here}*).
+% Styles: \begin{lstlisting}[style=numbered] adds line numbers.
+\lstdefinestyle{osu}{
+  basicstyle=\scriptsize\ttfamily,
+  keywordstyle=\color{stratosphere}\bfseries,
+  stringstyle=\color{solarflare},
+  commentstyle=\color{pinestand}\itshape,
+  identifierstyle=\color{paddletail!85},
+  emphstyle=\color{beaver}\bfseries,
+  numberstyle=\tiny\color{crater},
+  showstringspaces=false,
+  upquote=true,
+  columns=flexible, keepspaces=true,
+  tabsize=4,
+  escapeinside={(*}{*)},
+  aboveskip=0pt, belowskip=0pt,
+  abovecaptionskip=0pt, belowcaptionskip=6pt,
+}
+\lstdefinestyle{numbered}{style=osu, numbers=left, numbersep=6pt, xleftmargin=12pt}
+\lstset{style=osu}
+\edef\osu@tmp{\noexpand\lstset{language=\osu@code}}\osu@tmp
+
+\tcbset{osucode/.style={enhanced, arc=4pt, boxrule=0.4pt,
+  colback=coastline!15, colframe=coastline!80, left=4pt, right=4pt,
+  top=2pt, bottom=2pt, before skip=4pt, after skip=4pt,
+  drop fuzzy shadow=black!30}}
+\BeforeBeginEnvironment{lstlisting}{\begin{tcolorbox}[osucode]}
+\AfterEndEnvironment{lstlisting}{\end{tcolorbox}}
+% Whole file:  \codefile{code/demo.py}  or  \codefile[style=numbered]{...}
+\newcommand{\codefile}[2][]{%
+  \begin{tcolorbox}[osucode]\lstinputlisting[#1]{#2}\end{tcolorbox}}
+
+%==============================================================================
+% 13. Pseudocode (algorithm2e)
+%==============================================================================
+% Use \begin{algorithm}[H] inside frames (floats do not float in beamer).
+\SetAlFnt{\small\sffamily}
+\SetAlCapFnt{\small\sffamily}
+\SetAlCapNameFnt{\small\sffamily}
+\newcommand{\osu@algkw}[1]{\textbf{\textcolor{stratosphere}{#1}}}
+\SetKwSty{osu@algkw}
+\SetCommentSty{osu@algcomment}
+\newcommand{\osu@algcomment}[1]{\textcolor{pinestand}{\textit{#1}}}
+\renewcommand{\thealgocf}{}
+\NoCaptionOfAlgo
+\DontPrintSemicolon
+\SetKwInOut{Input}{inputs}
+\SetKwInOut{Local}{local}
+\SetKwInOut{Output}{output}
+\SetKwProg{Fn}{function}{}{}
+\SetKwProg{Unless}{unless}{\ do}{}
+\SetKwProg{Repeat}{repeat until}{\ do}{}
+
+%==============================================================================
+% 14. Bibliography (applied only if you load biblatex)
+%==============================================================================
+\AtEndPreamble{%
+  \@ifpackageloaded{biblatex}{%
+    \setbeamertemplate{bibliography item}{\ifdefined\insertbiblabel\insertbiblabel\fi}
+    \setbeamerfont{bibliography entry author}{size=\tiny}
+    \setbeamerfont{bibliography entry title}{size=\tiny}
+    \setbeamerfont{bibliography entry location}{size=\tiny}
+    \setbeamerfont{bibliography entry note}{size=\tiny}
+    \setbeamercolor{bibliography item}{fg=beaver}
+    \setbeamercolor{bibliography entry author}{fg=paddletail!85}
+    \setbeamercolor{bibliography entry title}{fg=paddletail}
+    \setbeamercolor{bibliography entry location}{fg=crater}
+    \setbeamercolor{bibliography entry note}{fg=crater}
+    \AtBeginBibliography{\tiny}%
+  }{}%
+}
+
+\endinput
