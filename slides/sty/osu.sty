@@ -23,6 +23,8 @@
 %   logopath  = sty/logo/                   where the logo images live
 %   legacy    = false | true                keep old names (\defn, \key, ...)
 %   metropolis= {...}                       extra options passed to metropolis
+%   lang      = en-US                       document language (PDF /Lang)
+%   linkline  = true | false                underline web links (not colour alone)
 %
 % The same switches also work as commands in the preamble:
 %   \campus{Cascades}   \presentmode{teaching}
@@ -43,6 +45,7 @@
 \newif\ifosu@footer      \osu@footertrue
 \newif\ifosu@todo        \osu@todotrue
 \newif\ifosu@legacy      \osu@legacyfalse
+\newif\ifosu@linkline    \osu@linklinetrue
 \newif\ifosu@research    % set at \begin{document}
 \newif\ifosu@showlab     % set at \begin{document}
 
@@ -55,6 +58,7 @@
 \def\osu@code{Python}
 \def\osu@logopath{sty/logo/}
 \def\osu@metro{}
+\def\osu@lang{en-US}
 
 \pgfkeys{
   /osu/.cd,
@@ -72,6 +76,8 @@
   code/.store in    = \osu@code,
   logopath/.store in= \osu@logopath,
   metropolis/.store in = \osu@metro,
+  lang/.store in    = \osu@lang,
+  linkline/.is if   = osu@linkline,
 }
 \ProcessPgfPackageOptions{/osu}
 
@@ -97,9 +103,19 @@
     \RequirePackage[scale=0.85]{FiraMono}
   \fi
 }{}
+% Accessibility: map every glyph to Unicode, so text copies, searches and is
+% read aloud correctly (ligatures, symbols); XeLaTeX/LuaLaTeX do this already.
+\ifpdftex
+  \input{glyphtounicode}\pdfgentounicode=1
+\fi
 
 % --- Colors (shared with the poster template)
 \RequirePackage{sty/osucolors}
+% Text versions of light palette colours, so small text meets WCAG 2.1 AA
+% contrast (4.5:1 on white). Use the palette colours for fills and graphics.
+\colorlet{osunote}{paddletail!60}          % footnotes, captions, notes  5.7:1
+\colorlet{osuhopbine}{hopbine!60!black}    % \mat                        6.6:1
+\colorlet{osusolarflare}{solarflare!70!black}% code strings              5.1:1
 
 % --- Math
 \RequirePackage{amsmath,amssymb,mathtools}
@@ -148,6 +164,16 @@
 \RequirePackage{multimedia}   % \movie (Okular / Acrobat)
 \RequirePackage{animate}      % frame-by-frame animations
 \RequirePackage{qrcode}
+\RequirePackage{accsupp}     % spoken text for icons and images
+
+% Accessibility helpers (pdfLaTeX; harmless elsewhere)
+%   \osu@icon{\faCheck}{correct}   icon that a screen reader reads as "correct"
+%   \osu@icon{\faFlask}{}          decorative icon, skipped by screen readers
+%   \figalt{A cat glaring}{\includegraphics{cat}}   image with alternative text
+\newcommand{\osu@icon}[2]{%
+  \BeginAccSupp{method=pdfstringdef,ActualText={#2}}#1\EndAccSupp{}}
+\newcommand{\figalt}[2]{%
+  \BeginAccSupp{method=pdfstringdef,Alt={#1}}#2\EndAccSupp{}}
 
 \hypersetup{
   colorlinks = true,
@@ -155,19 +181,31 @@
   citecolor  = beaver,
   filecolor  = beaver,
   urlcolor   = beaver,
+  pdfdisplaydoctitle = true,   % window shows the title, not the file name
+  pdflang    = \osu@lang,      % screen readers pick the right voice
 }
+% Web links are underlined as well as coloured (WCAG 1.4.1), set by linkline.
+% \qrlink and \mediabutton draw their own button and skip the underline.
+\newif\ifosu@inlink \osu@inlinktrue
+\AtBeginDocument{%
+  \let\osu@hyperlinkurl\hyper@linkurl
+  \renewcommand{\hyper@linkurl}[2]{%
+    \ifosu@linkline\ifosu@inlink
+      \osu@hyperlinkurl{\uline{#1}}{#2}%
+    \else\osu@hyperlinkurl{#1}{#2}\fi
+    \else\osu@hyperlinkurl{#1}{#2}\fi}}
 \urlstyle{same}
 
 %==============================================================================
 % 3. Beamer colors and templates
 %==============================================================================
 \setbeamercolor{normal text}{fg=paddletail!85, bg=bucktooth}
-\setbeamercolor{frametitle}{fg=bucktooth, bg=beaver!90}
+\setbeamercolor{frametitle}{fg=bucktooth, bg=beaver}  % 4.6:1
 \setbeamercolor{title separator}{fg=beaver}
 \setbeamercolor{progress bar}{fg=beaver, bg=beaver!20}
 \setbeamercolor{alerted text}{fg=beaver}
 \setbeamercolor{example text}{fg=pinestand}
-\setbeamercolor{footnote}{fg=crater}
+\setbeamercolor{footnote}{fg=osunote}
 \setbeamercolor{footnote mark}{fg=beaver}
 
 % No roman numerals on continued frames ([allowframebreaks])
@@ -242,20 +280,20 @@
     \ifosu@research
       \node[opacity=0.9,anchor=north east,xshift=-10pt,yshift=-5pt]
         at (current page.north east)
-        {\includegraphics[height=\osu@titlelogoheight]{\osu@titlelogo}};
+        {\figalt{Oregon State University logo}{\includegraphics[height=\osu@titlelogoheight]{\osu@titlelogo}}};
     \else
       \node[anchor=south east,xshift=-10pt,yshift=8pt]
         at (current page.south east)
-        {\includegraphics[height=\osu@titlelogoheight]{\osu@titlelogo}};
+        {\figalt{Oregon State University logo}{\includegraphics[height=\osu@titlelogoheight]{\osu@titlelogo}}};
     \fi
     \ifosu@showlab
       \ifosu@research
         \node[opacity=0.8,anchor=south] at (current page.south)
-          {\includegraphics[height=\osu@titlelogoheight]{\osu@lablogo}};
+          {\figalt{Soundbendor Lab logo}{\includegraphics[height=\osu@titlelogoheight]{\osu@lablogo}}};
       \else
         \node[opacity=0.8,anchor=south west,xshift=10pt,yshift=8pt]
           at (current page.south west)
-          {\includegraphics[height=\osu@titlelogoheight]{\osu@lablogo}};
+          {\figalt{Soundbendor Lab logo}{\includegraphics[height=\osu@titlelogoheight]{\osu@lablogo}}};
       \fi
     \fi
   \end{tikzpicture}%
@@ -268,15 +306,15 @@
     \ifosu@framelogo
       \node[opacity=0.85,anchor=north east,xshift=-6pt,yshift=-1pt]
         at (current page.north east)
-        {\includegraphics[height=\osu@framelogoheight]{\osu@framelogofile}};
+        {\osu@icon{\includegraphics[height=\osu@framelogoheight]{\osu@framelogofile}}{}};
     \fi
     \ifosu@showlab
       \node[opacity=0.6,anchor=south west,xshift=4pt]
         at (current page.south west)
-        {\includegraphics[height=\osu@lablogoheight]{\osu@lablogo}};
+        {\osu@icon{\includegraphics[height=\osu@lablogoheight]{\osu@lablogo}}{}};
     \else\ifosu@footer\ifdefined\insertcourseid
       \node[anchor=south west,xshift=8pt,yshift=6pt,
-            font=\tiny\sffamily,text=crater]
+            font=\scriptsize\sffamily,text=osunote]
         at (current page.south west)
         {\insertcourseid\ \textperiodcentered\ \insertshorttitle};
     \fi\fi\fi
@@ -371,13 +409,13 @@
 \newcommand{\keyidea}[1]{\textbf{\textcolor{stratosphere}{#1}}}
 \newcommand{\var}[1]{\textcolor{pinestand}{\textit{#1}}}
 \newcommand{\sym}[1]{\textbf{\textcolor{pinestand}{#1}}}
-\newcommand{\mat}[1]{\textcolor{hopbine}{#1}}
+\newcommand{\mat}[1]{\textcolor{osuhopbine}{#1}}
 \newcommand{\stress}[1]{\textsl{\textcolor{beaver}{#1}}}
 \newcommand{\code}[1]{\texttt{\textcolor{stratosphere}{#1}}}
 \newcommand{\hl}[1]{{\setlength{\fboxsep}{1pt}\colorbox{candela}{\strut#1}}}
 \newcommand{\todo}[1]{\ifosu@todo{\setlength{\fboxsep}{2pt}%
   \colorbox{luminance}{\scriptsize\bfseries\color{paddletail}%
-  \faExclamationTriangle\ TODO: #1}}\fi}
+  \osu@icon{\faExclamationTriangle}{}\ TODO: #1}}\fi}
 
 % Overlay-aware strike-through:  \sout<2->{wrong answer}
 \renewcommand<>{\sout}[1]{\alt#2{\beameroriginal{\sout}{#1}}{#1}}
@@ -425,7 +463,7 @@
   osubox/.style n args={3}{
     enhanced, sharp corners=west, arc=2pt,
     colback=#1!6, colframe=#1, boxrule=0pt, leftrule=2.5pt,
-    colbacktitle=#1!16, coltitle=#1!75!black,
+    colbacktitle=#1!16, coltitle=#1!55!black,   % >= 5:1 for every box colour
     fonttitle=\bfseries\small, fontupper=\small,
     title={#2\ifstrempty{#3}{}{\ #3}},
     titlerule=0pt, toptitle=1.5pt, bottomtitle=1.5pt,
@@ -436,7 +474,7 @@
 \newcommand{\osunewbox}[4]{%
   \newenvironment<>{#1}[1][#4]{%
     \begin{actionenv}##2%
-    \begin{tcolorbox}[osubox={#2}{#3}{##1}]}%
+    \begin{tcolorbox}[osubox={#2}{\osu@icon{#3}{}}{##1}]}%
     {\end{tcolorbox}\end{actionenv}}}
 
 % Teaching
@@ -462,11 +500,11 @@
 \resetcounteronoverlays{hypothesis}
 \newenvironment<>{rq}[1][]{%
   \begin{actionenv}#2\refstepcounter{rq}%
-  \begin{tcolorbox}[osubox={starcanvas}{\faSearch\ \therq\ifstrempty{#1}{}{:}}{#1}]}%
+  \begin{tcolorbox}[osubox={starcanvas}{\osu@icon{\faSearch}{}\ \therq\ifstrempty{#1}{}{:}}{#1}]}%
   {\end{tcolorbox}\end{actionenv}}
 \newenvironment<>{hypothesis}[1][]{%
   \begin{actionenv}#2\refstepcounter{hypothesis}%
-  \begin{tcolorbox}[osubox={roguewave}{\faFlask\ \thehypothesis\ifstrempty{#1}{}{:}}{#1}]}%
+  \begin{tcolorbox}[osubox={roguewave}{\osu@icon{\faFlask}{}\ \thehypothesis\ifstrempty{#1}{}{:}}{#1}]}%
   {\end{tcolorbox}\end{actionenv}}
 
 % Multiple-choice question with an overlay reveal:
@@ -481,7 +519,7 @@
 \newenvironment{choices}{\begin{enumerate}[(A)]}{\end{enumerate}}
 \newcommand{\choice}{\item}
 \newcommand<>{\correctchoice}[1]{%
-  \item \alt#2{\textcolor{pinestand}{\textbf{#1}\ \faCheck}}{#1}}
+  \item \alt#2{\textcolor{pinestand}{\textbf{#1}\ \osu@icon{\faCheck}{ (correct)}}}{#1}}
 
 % Plain rounded frame (v1 \roundbox, now tcolorbox)
 \newtcolorbox{roundbox}[1][]{enhanced, arc=4pt, boxrule=0.5pt,
@@ -526,8 +564,8 @@
   \begin{tcolorbox}[enhanced, frame hidden, colback=white, left=20pt,
     right=10pt, fontupper=\large\itshape,
     overlay={\node[anchor=north west, text=beaver!60, font=\fontsize{26}{26}\selectfont]
-      at ([xshift=3pt,yshift=1pt]frame.north west) {``};},
-    lower separated=false, fontlower=\small\upshape\color{crater}, halign lower=right]}%
+      at ([xshift=3pt,yshift=1pt]frame.north west) {\osu@icon{``}{}};},
+    lower separated=false, fontlower=\small\upshape\color{osunote}, halign lower=right]}%
   {\ifx\osu@quoteby\@empty\else\tcblower ---\,\osu@quoteby\fi\end{tcolorbox}}
 
 % Big number callout:  \bignumber{97\%}{of slides contain at least one typo}
@@ -548,12 +586,17 @@
 % Small citation in the bottom-right corner:  \slidecite{Smith et al., 2025}
 \newcommand{\slidecite}[1]{%
   \begin{tikzpicture}[remember picture,overlay]
-    \node[anchor=south east, xshift=-30pt, yshift=4pt, font=\tiny,
-          text=crater, align=right] at (current page.south east) {#1};
+    \node[anchor=south east, xshift=-30pt, yshift=4pt, font=\scriptsize,
+          text=osunote, align=right] at (current page.south east) {#1};
   \end{tikzpicture}}
 
-% QR code that is also a link:  \qrlink{https://...}  or  \qrlink[3cm]{...}
-\newcommand{\qrlink}[2][2cm]{\href{#2}{\qrcode[height=#1]{#2}}}
+% QR code that is also a link, with the address printed underneath (a QR code
+% alone is unusable without a camera):  \qrlink{https://...}  or  \qrlink[3cm]{...}
+\newcommand{\qrlink}[2][2cm]{%
+  \begin{tabular}[b]{@{}c@{}}
+    {\osu@inlinkfalse\href{#2}{\figalt{QR code: #2}{\qrcode[height=#1]{#2}}}}\\[2pt]
+    {\scriptsize\url{#2}}
+  \end{tabular}}
 
 % Full-bleed background image (use in a [plain] frame): \fullbleed{img/x}
 \newcommand{\fullbleed}[1]{%
@@ -571,9 +614,10 @@
 \newcommand{\mediabutton}[2]{%
   \in@{://}{#1}%
   \ifin@\def\osu@mediatarget{#1}\else\def\osu@mediatarget{run:#1}\fi
+  \osu@inlinkfalse
   \expandafter\href\expandafter{\osu@mediatarget}{\tcbox[on line, colback=beaver, colframe=beaver,
     coltext=white, arc=3pt, boxsep=1pt, left=6pt, right=6pt, top=2pt,
-    bottom=2pt, fontupper=\small\bfseries]{\faPlay\ #2}}}
+    bottom=2pt, fontupper=\small\bfseries]{\osu@icon{\faPlay}{}\ #2}}\osu@inlinktrue}
 
 % Colour swatch and the whole OSU palette (handy for a reference slide)
 \newcommand{\colorswatch}[2]{%
@@ -581,10 +625,10 @@
 \newcommand{\osupalette}{%
   {\footnotesize\setlength{\tabcolsep}{6pt}\renewcommand{\arraystretch}{1.6}%
   \begin{tabular}{@{}llll@{}}
-    \multicolumn{1}{@{}l}{\textcolor{crater}{\scriptsize PRIMARY}} &
-    \multicolumn{1}{l}{\textcolor{crater}{\scriptsize NORMAL}} &
-    \multicolumn{1}{l}{\textcolor{crater}{\scriptsize LIGHT / DARK}} &
-    \multicolumn{1}{l@{}}{\textcolor{crater}{\scriptsize NEUTRALS}} \\
+    \multicolumn{1}{@{}l}{\textcolor{osunote}{\scriptsize PRIMARY}} &
+    \multicolumn{1}{l}{\textcolor{osunote}{\scriptsize NORMAL}} &
+    \multicolumn{1}{l}{\textcolor{osunote}{\scriptsize LIGHT / DARK}} &
+    \multicolumn{1}{l@{}}{\textcolor{osunote}{\scriptsize NEUTRALS}} \\
     \colorswatch{beaver}{Beaver}            & \colorswatch{pinestand}{Pine Stand}
       & \colorswatch{reindeermoss}{Reindeer Moss} & \colorswatch{till}{Till} \\
     \colorswatch{paddletail}{Paddletail}    & \colorswatch{hightide}{High Tide}
@@ -603,20 +647,23 @@
 %==============================================================================
 % 11. Plots: OSU colour cycle for pgfplots
 %==============================================================================
+% Lines differ by colour, marker AND dash pattern, so series stay apart in
+% greyscale and for colour-blind viewers (WCAG 1.4.1). Every line colour has
+% at least 3:1 contrast on white (1.4.11); Luminance is darkened for lines.
 \pgfplotscreateplotcyclelist{osu}{%
-  {beaver, fill=beaver, mark=*},
-  {stratosphere, fill=stratosphere, mark=square*},
-  {pinestand, fill=pinestand, mark=triangle*},
-  {luminance, fill=luminance, mark=diamond*},
-  {hightide, fill=hightide, mark=pentagon*},
-  {highdesert, fill=highdesert, mark=otimes*},
-  {starcanvas, fill=starcanvas, mark=oplus*},
+  {beaver, fill=beaver, mark=*, solid},
+  {stratosphere, fill=stratosphere, mark=square*, densely dashed},
+  {pinestand, fill=pinestand, mark=triangle*, densely dotted},
+  {luminance!75!black, fill=luminance, mark=diamond*, dashdotted},
+  {hightide, fill=hightide, mark=pentagon*, loosely dashed},
+  {highdesert, fill=highdesert, mark=otimes*, densely dashdotdotted},
+  {starcanvas, fill=starcanvas, mark=oplus*, loosely dotted},
 }
 \pgfplotscreateplotcyclelist{osubar}{%
   {beaver!80!black, fill=beaver},
   {stratosphere!80!black, fill=stratosphere},
   {pinestand!80!black, fill=pinestand},
-  {luminance!80!black, fill=luminance},
+  {luminance!60!black, fill=luminance},
   {hightide!80!black, fill=hightide},
   {highdesert!80!black, fill=highdesert},
   {starcanvas!80!black, fill=starcanvas},
@@ -637,11 +684,11 @@
 \lstdefinestyle{osu}{
   basicstyle=\scriptsize\ttfamily,
   keywordstyle=\color{stratosphere}\bfseries,
-  stringstyle=\color{solarflare},
+  stringstyle=\color{osusolarflare},
   commentstyle=\color{pinestand}\itshape,
   identifierstyle=\color{paddletail!85},
   emphstyle=\color{beaver}\bfseries,
-  numberstyle=\tiny\color{crater},
+  numberstyle=\tiny\color{osunote},
   showstringspaces=false,
   upquote=true,
   columns=flexible, keepspaces=true,
@@ -700,18 +747,18 @@
 \AtEndPreamble{%
   \@ifpackageloaded{biblatex}{%
     \setbeamertemplate{bibliography item}{\ifdefined\insertbiblabel\insertbiblabel\fi}
-    \setbeamerfont{bibliography item}{size=\tiny, series=\bfseries}
-    \setbeamerfont{bibliography entry author}{size=\tiny, series=\bfseries}
-    \setbeamerfont{bibliography entry title}{size=\tiny}
-    \setbeamerfont{bibliography entry location}{size=\tiny}
-    \setbeamerfont{bibliography entry note}{size=\tiny}
+    \setbeamerfont{bibliography item}{size=\scriptsize, series=\bfseries}
+    \setbeamerfont{bibliography entry author}{size=\scriptsize, series=\bfseries}
+    \setbeamerfont{bibliography entry title}{size=\scriptsize}
+    \setbeamerfont{bibliography entry location}{size=\scriptsize}
+    \setbeamerfont{bibliography entry note}{size=\scriptsize}
     \setbeamercolor{bibliography item}{fg=beaver}
     \setbeamercolor{bibliography entry author}{fg=paddletail}
     \setbeamercolor{bibliography entry title}{fg=stratosphere}
     \setbeamercolor{bibliography entry location}{fg=paddletail!70}
     \setbeamercolor{bibliography entry note}{fg=paddletail!70}
     \setlength{\bibitemsep}{4pt}%
-    \AtBeginBibliography{\tiny\osu@bibnames}%
+    \AtBeginBibliography{\scriptsize\osu@bibnames}%
     \AtEveryCite{\footnotesize\bfseries\color{beaver}}%
   }{}%
 }

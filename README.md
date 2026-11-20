@@ -41,4 +41,5 @@ export PATH=/usr/local/apps/latex/2022/bin/x86_64-linux:$PATH
 - The teaching example has a button that plays *Loop Invariants* by J. P. Dougherty
   (`slides/media/loop-invariants.mp3`). Local-file buttons need a desktop PDF viewer
   (Acrobat, Okular, Skim) and the `media/` folder next to the PDF.
+- Accessibility: the slide style meets WCAG 2.1 AA colour contrast and adds PDF language, title, Unicode text and alt-text support. Full screen-reader support needs tagged PDFs, which Beamer can't make yet; see [`slides/README.md`](slides/README.md#accessibility).
 - The OSU and OSU-Cascades logos are university marks; follow OSU brand guidelines when using them.

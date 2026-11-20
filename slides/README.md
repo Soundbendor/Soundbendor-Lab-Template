@@ -69,6 +69,8 @@ Teaching mode uses course metadata in place of subtitle, author and date:
 | `logopath` | `sty/logo/` | Where the logo files live |
 | `legacy` | `false`, `true` | Also define the old names `\defn`, `\key`, `\sign` |
 | `metropolis` | `{...}` | Passed to Metropolis, e.g. `metropolis={progressbar=frametitle}` |
+| `lang` | `en-US`, any language tag | Document language written into the PDF, so screen readers use the right voice |
+| `linkline` | `true`, `false` | Underline web links, so they are not marked by colour alone |
 
 The v1 commands `\campus{Cascades}` and `\presentmode{teaching}` still work in the preamble.
 
@@ -142,8 +144,9 @@ Other tables: use booktabs (`\toprule`, `\midrule`, `\bottomrule`) with a bold h
 |---|---|
 | `\bignumber[color]{73\%}{caption}` | Large statistic callout |
 | `\slidecite{Author, 2025}` | Small source note, bottom-right |
-| `\qrlink[size]{url}` | QR code that is also a link |
+| `\qrlink[size]{url}` | QR code that is also a link, with the address printed underneath |
 | `\fullbleed{img/file}` | Full-page image (use in a `[plain]` frame) |
+| `\figalt{description}{\includegraphics{...}}` | Image with alternative text for screen readers |
 | `\mediabutton{https://...}{Play}` or `\mediabutton{media/file.mp3}{Play}` | Play button. A web link works in every viewer. A local file must sit next to the PDF and needs a desktop viewer (Acrobat, Okular, Skim); browser viewers block file links |
 | `\codefile[opts]{file.py}` | Include a source file in the code box |
 | `\osupalette`, `\colorswatch{color}{Label}` | Palette reference slide |
@@ -177,6 +180,45 @@ Load biblatex in the deck as usual; IEEE style is recommended. The style detects
 \begin{frame}[allowframebreaks]{References}\printbibliography[heading=none]\end{frame}
 ```
 
+## Accessibility
+
+Beamer cannot produce a fully tagged PDF, so a deck cannot meet WCAG 2.1 AA on
+its own. The style handles what it can:
+
+- **Contrast (1.4.3, 1.4.11).** All text colours reach 4.5:1 on white: the
+  title bar is full Beaver (4.6:1), and footnotes, `\slidecite`, quote
+  attributions and the teaching footer use `osunote` (black at 60 %, 5.7:1).
+  `\mat`, code strings and box titles use darker versions of their palette colours.
+  Light palette colours (Luminance, Candela, Solar Flare, Seafoam, ...) are
+  for fills, never for text.
+- **Not colour alone (1.4.1).** Web links are underlined. Plot lines differ
+  by marker and dash pattern as well as colour. `\correctchoice` adds a check
+  mark, and `\sout` strikes text through.
+- **PDF metadata (2.4.2, 3.1.1).** The title and author come from `\title`
+  and `\author`, the language from `lang`, and viewers show the title instead
+  of the file name.
+- **Readable text.** Under pdfLaTeX every glyph is mapped to Unicode, so text
+  copies, searches and is read aloud correctly. Box icons, frame logos and
+  the quote mark are marked as decorative, so screen readers skip them. The
+  `\correctchoice` check is read as "(correct)", and the title-page logos have
+  alternative text.
+- **Size.** Nothing the style places is smaller than `\scriptsize`, including
+  references, the footer and `\slidecite`.
+
+What each deck still needs:
+
+- Wrap figures in `\figalt{what it shows}{\includegraphics{...}}`.
+- Give audio and video a text version. The song slide shows its lyrics.
+- Don't use colour as the only signal in your own figures. Label bars directly
+  (`nodes near coords`) or add a legend with patterns.
+- Keep text at `\small` or larger where you can, and don't put text on light fills.
+- Publish an overlay-free copy for screen-reader users. Overlays repeat each
+  frame several times, and the `handout` option collapses them to one page per frame:
+  `\documentclass[handout,10pt,aspectratio=169,xcolor=table]{beamer}`.
+- For a fully accessible version, share the slide text as HTML or Markdown
+  next to the PDF. Real PDF tagging (`\DocumentMetadata{tagging=on}`) needs a
+  newer LaTeX than TeX Live 2022, and Beamer support for it is still incomplete.
+
 ## Changes from v1 (`sty/osu.tex`)
 
 - It is now a package with options (`\usepackage[...]{sty/osu}`) instead of `\input{sty/osu.tex}`.
@@ -199,6 +241,7 @@ Load biblatex in the deck as usual; IEEE style is recommended. The style detects
   - `paddletail` and `bucktooth` colors.
   - OSU pgfplots color cycle.
   - Unnumbered "References" continuation frames.
+  - Accessibility: contrast-safe text colours, underlined links, PDF language and title, Unicode text, spoken icon labels, `\figalt`.
 
 ## Poster template
 
