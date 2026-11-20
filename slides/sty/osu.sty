@@ -16,7 +16,7 @@
 %   framelogo = true | false                OSU logo in the frame-title bar
 %   footer    = true | false                teaching: course ID bottom-left
 %   bullets   = square | circle             itemize bullet family
-%   enumerate = arabic | Alph | alph | roman | Roman   default enumerate label
+%   enumerate = circle | arabic | Alph | alph | roman | Roman   enumerate label
 %   font      = fira | default              Fira Sans (metropolis look) or CM sans
 %   code      = Python | C++ | Java | ...   default listings language
 %   todo      = true | false                show or hide \todo{} notes
@@ -50,7 +50,7 @@
 \def\osu@mode{research}
 \def\osu@lab{auto}
 \def\osu@bullets{square}
-\def\osu@enumerate{arabic}
+\def\osu@enumerate{circle}
 \def\osu@font{fira}
 \def\osu@code{Python}
 \def\osu@logopath{sty/logo/}
@@ -163,7 +163,7 @@
 \setbeamercolor{frametitle}{fg=bucktooth, bg=beaver!90}
 \setbeamercolor{title separator}{fg=beaver}
 \setbeamercolor{progress bar}{fg=beaver, bg=beaver!20}
-\setbeamercolor{alerted text}{fg=solarflare}
+\setbeamercolor{alerted text}{fg=beaver}
 \setbeamercolor{example text}{fg=pinestand}
 \setbeamercolor{footnote}{fg=crater}
 \setbeamercolor{footnote mark}{fg=beaver}
@@ -171,8 +171,28 @@
 % No roman numerals on continued frames ([allowframebreaks])
 \setbeamertemplate{frametitle continuation}{}
 
-% Blocks: rounded with shadow (v1 look)
-\setbeamertemplate{blocks}[rounded][shadow=true]
+% Blocks: rounded, thin grey outline, soft shadow (tcolorbox). Title and body
+% colours come from the beamer colour theme, so metropolis block=fill or
+% block=transparent still apply; the outline keeps white-on-white visible.
+\newcommand{\osu@blockbegin}[2]{% #1 = title colour, #2 = body colour
+  \usebeamercolor{#1}\colorlet{osu@btfg}{fg}%
+  \ifbeamercolorempty[bg]{#1}{\colorlet{osu@btbg}{white}}{\colorlet{osu@btbg}{bg}}%
+  \ifbeamercolorempty[bg]{#2}{\colorlet{osu@bbbg}{white}}%
+    {\usebeamercolor{#2}\colorlet{osu@bbbg}{bg}}%
+  \ifx\insertblocktitle\@empty\tcbset{osu@blocktitle/.style={}}%
+  \else\tcbset{osu@blocktitle/.style={title={\insertblocktitle}}}\fi
+  \begin{tcolorbox}[enhanced, arc=3pt, boxrule=0.4pt, colframe=coastline!70,
+    colback=osu@bbbg, colbacktitle=osu@btbg, coltitle=osu@btfg,
+    fonttitle=\usebeamerfont*{block title}, titlerule=0.4pt,
+    toptitle=1.5pt, bottomtitle=1.5pt, left=5pt, right=5pt, top=3pt, bottom=3pt,
+    drop fuzzy shadow=black!25, before skip=4pt, after skip=6pt, osu@blocktitle]
+  \usebeamercolor[fg]{normal text}}
+\setbeamertemplate{block begin}{\osu@blockbegin{block title}{block body}}
+\setbeamertemplate{block end}{\end{tcolorbox}}
+\setbeamertemplate{block alerted begin}{\osu@blockbegin{block title alerted}{block body alerted}}
+\setbeamertemplate{block alerted end}{\end{tcolorbox}}
+\setbeamertemplate{block example begin}{\osu@blockbegin{block title example}{block body example}}
+\setbeamertemplate{block example end}{\end{tcolorbox}}
 \setbeamercolor{block title example}{fg=pinestand}
 \setbeamerfont{block title example}{series=\bfseries}
 \setbeamercolor{block title alerted}{fg=beaver}
@@ -283,6 +303,9 @@
 %==============================================================================
 % Default enumerate label. (Redefining \theenumi does not work: beamer resets
 % it at \begin{document}.) Mini-templates such as [a)] still override this.
+\setbeamercolor{item projected}{fg=white, bg=beaver!90}
+\ifdefstring{\osu@enumerate}{circle}{\setbeamertemplate{enumerate items}[circle]}{}
+\setbeamertemplate{enumerate mini template}{\insertenumlabel}   % [a)], [(A)] stay plain
 \ifdefstring{\osu@enumerate}{Alph} {\setbeamertemplate{enumerate item}{\Alph{enumi}.}}{}
 \ifdefstring{\osu@enumerate}{alph} {\setbeamertemplate{enumerate item}{\alph{enumi})}}{}
 \ifdefstring{\osu@enumerate}{roman}{\setbeamertemplate{enumerate item}{\roman{enumi}.}}{}
@@ -463,13 +486,45 @@
   colframe=starcanvas, colback=white, left=6pt, right=6pt, top=6pt,
   bottom=6pt, #1}
 
+% Confusion matrix (booktabs, bold headers, shaded diagonal):
+%   \begin{confusionmatrix}{Actual}{Predicted}{cat, dog, toaster}
+%     \cmrow{cat}{50, 2, 0}
+%     \cmrow{dog}{3, 41, 1}
+%     \cmrow{toaster}{0, 0, 12}
+%   \end{confusionmatrix}
+\newcounter{osucmrow}\newcounter{osucmcol}
+\newenvironment{confusionmatrix}[3]{%
+  \def\osu@cmhead{}\def\osu@cmn{0}%
+  \renewcommand*{\do}[1]{\appto\osu@cmhead{& \textbf{##1}}%
+    \edef\osu@cmn{\the\numexpr\osu@cmn+1\relax}}%
+  \docsvlist{#3}%
+  \edef\osu@cmlast{\the\numexpr\osu@cmn+1\relax}%
+  \setcounter{osucmrow}{0}%
+  \renewcommand{\arraystretch}{1.2}%
+  \begin{tabular}{@{}l*{\osu@cmn}{c}@{}}
+    \toprule
+    & \multicolumn{\osu@cmn}{c}{\textbf{#2}} \\
+    \cmidrule(l){2-\osu@cmlast}
+    \textbf{#1} \osu@cmhead \\
+    \midrule}
+  {\bottomrule\end{tabular}}
+\newcommand{\cmrow}[2]{%
+  \stepcounter{osucmrow}\setcounter{osucmcol}{0}%
+  \def\osu@cmcells{}%
+  \renewcommand*{\do}[1]{\stepcounter{osucmcol}%
+    \ifnum\value{osucmcol}=\value{osucmrow}%
+      \appto\osu@cmcells{& \cellcolor{pinestand!18}\textbf{##1}}%
+    \else\appto\osu@cmcells{& ##1}\fi}%
+  \docsvlist{#2}%
+  \textbf{#1}\osu@cmcells \\}
+
 % Pull quote:  \begin{bigquote}[Ada Lovelace] ... \end{bigquote}
 \newenvironment{bigquote}[1][]{%
   \def\osu@quoteby{#1}%
-  \begin{tcolorbox}[enhanced, frame hidden, colback=white, left=28pt,
+  \begin{tcolorbox}[enhanced, frame hidden, colback=white, left=20pt,
     right=10pt, fontupper=\large\itshape,
-    overlay={\node[anchor=north west, text=beaver!60, font=\fontsize{48}{48}\selectfont]
-      at ([xshift=2pt,yshift=8pt]frame.north west) {``};},
+    overlay={\node[anchor=north west, text=beaver!60, font=\fontsize{26}{26}\selectfont]
+      at ([xshift=3pt,yshift=1pt]frame.north west) {``};},
     lower separated=false, fontlower=\small\upshape\color{crater}, halign lower=right]}%
   {\ifx\osu@quoteby\@empty\else\tcblower ---\,\osu@quoteby\fi\end{tcolorbox}}
 
@@ -505,12 +560,16 @@
       {\includegraphics[width=\paperwidth,height=\paperheight]{#1}};
   \end{tikzpicture}}
 
-% Button that opens a media file in the system player.
-%   \mediabutton{media/song.mp3}{Play the song}
-% (Embedded Flash players such as media9's APlayer.swf no longer work in any
-%  PDF viewer; keep the media folder next to the PDF.)
+% Button that opens audio/video.
+%   \mediabutton{https://example.org/song.mp3}{Play}   web link: works in every viewer
+%   \mediabutton{media/song.mp3}{Play}                 local file: needs the file next
+%       to the PDF, and a desktop viewer (Acrobat, Okular, Skim); browser viewers
+%       block file links.
+% (Embedded Flash players such as media9's APlayer.swf no longer work anywhere.)
 \newcommand{\mediabutton}[2]{%
-  \href{run:#1}{\tcbox[on line, colback=beaver, colframe=beaver,
+  \in@{://}{#1}%
+  \ifin@\def\osu@mediatarget{#1}\else\def\osu@mediatarget{run:#1}\fi
+  \expandafter\href\expandafter{\osu@mediatarget}{\tcbox[on line, colback=beaver, colframe=beaver,
     coltext=white, arc=3pt, boxsep=1pt, left=6pt, right=6pt, top=2pt,
     bottom=2pt, fontupper=\small\bfseries]{\faPlay\ #2}}}
 
@@ -609,7 +668,9 @@
 % Use \begin{algorithm}[H] inside frames (floats do not float in beamer).
 \SetAlFnt{\small\sffamily}
 \SetAlCapFnt{\small\sffamily}
-\SetAlCapNameFnt{\small\sffamily}
+\SetAlCapNameFnt{\small\sffamily\bfseries\scshape\color{beaver}}  % algorithm title
+\newcommand{\osu@algfunc}[1]{\textsc{\textcolor{beaver}{#1}}}
+\SetFuncSty{osu@algfunc}   % names from \SetKwFunction, e.g. \SetKwFunction{FTrain}{Train}
 \newcommand{\osu@algkw}[1]{\textbf{\textcolor{stratosphere}{#1}}}
 \SetKwSty{osu@algkw}
 \SetCommentSty{osu@algcomment}
@@ -627,19 +688,29 @@
 %==============================================================================
 % 14. Bibliography (applied only if you load biblatex)
 %==============================================================================
+% Recommended:  \usepackage[style=ieee]{biblatex}  \addbibresource{refs.bib}
+%   - numbered entries [1], a little space between them
+%   - authors bold, titles in Stratosphere (IEEE quotes kept), DOIs/URLs linked
+%   - in-text citations small, bold, Beaver
+\newcommand{\osu@bibnames}{%   bold author names in the reference list
+  \renewcommand*{\mkbibnamegiven}[1]{\textbf{##1}}%
+  \renewcommand*{\mkbibnamefamily}[1]{\textbf{##1}}}
 \AtEndPreamble{%
   \@ifpackageloaded{biblatex}{%
     \setbeamertemplate{bibliography item}{\ifdefined\insertbiblabel\insertbiblabel\fi}
-    \setbeamerfont{bibliography entry author}{size=\tiny}
+    \setbeamerfont{bibliography item}{size=\tiny, series=\bfseries}
+    \setbeamerfont{bibliography entry author}{size=\tiny, series=\bfseries}
     \setbeamerfont{bibliography entry title}{size=\tiny}
     \setbeamerfont{bibliography entry location}{size=\tiny}
     \setbeamerfont{bibliography entry note}{size=\tiny}
     \setbeamercolor{bibliography item}{fg=beaver}
-    \setbeamercolor{bibliography entry author}{fg=paddletail!85}
-    \setbeamercolor{bibliography entry title}{fg=paddletail}
-    \setbeamercolor{bibliography entry location}{fg=crater}
-    \setbeamercolor{bibliography entry note}{fg=crater}
-    \AtBeginBibliography{\tiny}%
+    \setbeamercolor{bibliography entry author}{fg=paddletail}
+    \setbeamercolor{bibliography entry title}{fg=stratosphere}
+    \setbeamercolor{bibliography entry location}{fg=paddletail!70}
+    \setbeamercolor{bibliography entry note}{fg=paddletail!70}
+    \setlength{\bibitemsep}{4pt}%
+    \AtBeginBibliography{\tiny\osu@bibnames}%
+    \AtEveryCite{\footnotesize\bfseries\color{beaver}}%
   }{}%
 }
 

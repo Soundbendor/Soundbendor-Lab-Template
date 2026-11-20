@@ -62,7 +62,7 @@ Teaching mode uses course metadata in place of subtitle, author and date:
 | `framelogo` | `true`, `false` | OSU logo in the frame-title bar |
 | `footer` | `true`, `false` | Teaching: "CS 101 · Title" bottom-left |
 | `bullets` | `square`, `circle` | Itemize bullet family |
-| `enumerate` | `arabic`, `Alph`, `alph`, `roman`, `Roman` | Default enumerate label |
+| `enumerate` | `circle`, `arabic`, `Alph`, `alph`, `roman`, `Roman` | Default enumerate label (`circle` = numbers in filled Beaver circles, as in v1). Mini-templates like `[a)]` stay plain |
 | `font` | `fira`, `default` | Fira Sans (the intended Metropolis font) or Computer Modern Sans |
 | `code` | `Python`, `C++`, `Java`, any listings language | Default code language |
 | `todo` | `true`, `false` | Show or hide `\todo{}` notes |
@@ -120,7 +120,21 @@ Each box takes an optional title and an optional overlay spec, for example
 To make your own box: `\osunewbox{envname}{color}{\faIcon}{Default Title}`.
 
 The standard Beamer blocks (`block`, `alertblock`, `exampleblock`, `definition`,
-`theorem`, `example`, `proof`) still work and keep the v1 rounded-shadow look.
+`theorem`, `example`, `proof`) are drawn as rounded boxes with a thin grey outline
+and a soft shadow, so they stay visible with `metropolis={block=transparent}` too.
+
+### Confusion matrix
+
+```latex
+\begin{confusionmatrix}{Cat (actual)}{CatNet (predicted)}{stays, leaves, glares}
+  \cmrow{stays}{412, 31, 7}
+  \cmrow{leaves}{38, 519, 2}
+  \cmrow{glares}{11, 4, 976}
+\end{confusionmatrix}
+```
+
+Booktabs rules, bold header row, and the correct (diagonal) cells bold on a light Pine Stand background.
+Other tables: use booktabs (`\toprule`, `\midrule`, `\bottomrule`) with a bold header row, as in the examples.
 
 ## Other helpers
 
@@ -130,7 +144,7 @@ The standard Beamer blocks (`block`, `alertblock`, `exampleblock`, `definition`,
 | `\slidecite{Author, 2025}` | Small source note, bottom-right |
 | `\qrlink[size]{url}` | QR code that is also a link |
 | `\fullbleed{img/file}` | Full-page image (use in a `[plain]` frame) |
-| `\mediabutton{media/file.mp3}{Play}` | Button that opens a file in the system player |
+| `\mediabutton{https://...}{Play}` or `\mediabutton{media/file.mp3}{Play}` | Play button. A web link works in every viewer. A local file must sit next to the PDF and needs a desktop viewer (Acrobat, Okular, Skim); browser viewers block file links |
 | `\codefile[opts]{file.py}` | Include a source file in the code box |
 | `\osupalette`, `\colorswatch{color}{Label}` | Palette reference slide |
 | `\node[osunode=pinestand]`, `\draw[osuarrow]` | TikZ styles for diagrams |
@@ -146,14 +160,18 @@ Math: `\argmin`, `\argmax`, `\argminl`, `\argmaxl` (limits forced inline),
 - `[style=numbered]` adds line numbers.
 - Put `\end{lstlisting}` at column 0. If it is indented, the box gets an extra blank line.
 - To escape to LaTeX inside code, use `(* ... *)`. v1 used `@`, which broke Python decorators.
-- For pseudocode, use algorithm2e with `\begin{algorithm}[H]`. Keywords are Stratosphere and comments (`\tcp`) are Pine Stand. The v1 `\Input`, `\Output`, `\Local`, `\Fn`, `\Unless` and `\Repeat` are kept.
+- For pseudocode, use algorithm2e with `\begin{algorithm}[H]`. The algorithm title (`\caption{...}`) is bold Beaver small caps, keywords are Stratosphere, comments (`\tcp`) are Pine Stand, and function names from `\SetKwFunction{FTrain}{Train}` are Beaver small caps. The v1 `\Input`, `\Output`, `\Local`, `\Fn`, `\Unless` and `\Repeat` are kept.
 
 ## Bibliography
 
-Load biblatex in the deck as usual. The style detects it and applies small, colored reference formatting:
+Load biblatex in the deck as usual; IEEE style is recommended. The style detects biblatex and formats:
+
+- in-text citations: small, bold, Beaver, e.g. **[1]**
+- reference list: numbered [1], [2], ... with a little space between entries;
+  authors bold, titles in Stratosphere (IEEE's quotation marks kept), DOIs and URLs as links
 
 ```latex
-\usepackage[style=authoryear]{biblatex}
+\usepackage[style=ieee]{biblatex}
 \addbibresource{refs.bib}
 ...
 \begin{frame}[allowframebreaks]{References}\printbibliography[heading=none]\end{frame}
@@ -166,7 +184,7 @@ Load biblatex in the deck as usual. The style detects it and applies small, colo
 - **Bug fixes:**
   - The forked file redefined `\mark`, which is a TeX primitive used for page marks. That command is now `\stress`.
   - `algorithm2e` was loaded twice with different options.
-  - `\renewcommand{\theenumi}{\Alph...}` never took effect, because beamer resets it at `\begin{document}`. Your decks have always shown 1, 2, 3, so the default stays arabic. Use `enumerate=Alph` for letters.
+  - `\renewcommand{\theenumi}{\Alph...}` never took effect, because beamer resets it at `\begin{document}`. The v1 `items[circle]` setting is what actually styled enumerate (numbers in circles); that is the default again. Use `enumerate=Alph` for letters.
   - The `circlealt` bullets could never be selected; now `bullets=circle` selects them.
   - The second `\makeatletter` should have been `\makeatother`.
 - **Removed:**
@@ -175,6 +193,7 @@ Load biblatex in the deck as usual. The style detects it and applies small, colo
   - `xpatch`, `color`, the duplicate `ragged2e`, and the `\lst@CommentDM@L` internal patch.
 - `mdframed` is replaced by `tcolorbox`. `roundbox` and the code box keep the same look.
 - New:
+  - `\alert` is Beaver (v1 used the lighter Solar Flare).
   - All-white Cascades logo for the orange title bar (`OSU-cascades-allwhite.png`).
   - Fira Sans under pdfLaTeX.
   - `paddletail` and `bucktooth` colors.

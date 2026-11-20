@@ -6,7 +6,7 @@
 \documentclass[10pt,aspectratio=169,xcolor=table]{beamer}
 \usepackage[campus=corvallis, mode=research]{sty/osu}
 
-\usepackage[style=authoryear, maxcitenames=2]{biblatex}
+\usepackage[style=ieee]{biblatex}
 \addbibresource{refs.bib}
 
 \title{Purr-ceptual Evaluation}
@@ -55,10 +55,11 @@
 
 \begin{frame}{Prior Work}
   \begin{itemize}
-    \item Attention mechanisms for cats \parencite{whiskers2024attention}
-    \item Mel-spectrograms, but for meows \parencite{mittens2023meowl}
+    \item Attention mechanisms for cats \cite{whiskers2024attention}
+    \item Mel-spectrograms, but for meows \cite{mittens2023meowl}
+    \item Large-scale napping datasets \cite{loaf2025, whiskers2024attention}
     \item The observer problem: the cat changes state when you check on it
-          \parencite{schrodinger1935}
+          \cite{schrodinger1935}
   \end{itemize}
   \bigskip
   \begin{bigquote}[Reviewer 2]
@@ -121,7 +122,8 @@
       \Input{playlist $\Pi$, cat $c$, treats $k$}
       \Output{model parameters $\theta$}
       \BlankLine
-      \Fn{Train($\Pi, c, k$)}{
+      \SetKwFunction{FTrain}{Train}
+      \Fn{\FTrain{$\Pi, c, k$}}{
         \ForEach{track $t \in \Pi$}{
           play $t$ \tcp*{at a respectful volume}
           \eIf{$c$ leaves the room}{
@@ -255,15 +257,16 @@ def loss(y_hat, y):
 
 \begin{frame}{Backup: Full Confusion Matrix}
   \centering
-  \begin{tabular}{l|cc}
-    \diagbox{Cat}{CatNet} & stays & leaves \\ \hline
-    stays  & 412 & 31 \\
-    leaves & 38  & 519 \\
-  \end{tabular}
+  \begin{confusionmatrix}{Cat (actual)}{CatNet (predicted)}{stays, leaves, glares}
+    \cmrow{stays}{412, 31, 7}
+    \cmrow{leaves}{38, 519, 2}
+    \cmrow{glares}{11, 4, 976}
+  \end{confusionmatrix}
   \bigskip
 
-  Appendix slides are not counted in the frame total
-  (\texttt{appendixnumberbeamer}).
+  Correct predictions are on the shaded diagonal. ``Glares'' is the most common
+  class and, according to the cat, the default.\par\medskip
+  {\small Appendix slides are not counted in the frame total.}
 \end{frame}
 
 \begin{frame}[allowframebreaks]{References}
