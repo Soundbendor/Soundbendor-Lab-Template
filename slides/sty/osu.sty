@@ -300,26 +300,29 @@
 }
 
 % Every frame with a title: OSU logo in the title bar, lab logo (research)
-% or course ID (teaching) bottom-left.
-\addtobeamertemplate{frametitle}{}{%
-  \begin{tikzpicture}[remember picture,overlay]
+% or course ID (teaching) bottom-left. Drawn on top of each finished page by
+% LaTeX's shipout hook rather than a beamer template, because metropolis
+% resets its templates at \appendix and one-page [allowframebreaks] frames
+% skip frametitle hooks. Needs no second run. Untitled frames (title page,
+% section pages) and metropolis standout frames get none.
+\providebool{metropolis@standout}
+\AddToHook{shipout/foreground}{%
+  \ifx\insertframetitle\@empty\else\ifbool{metropolis@standout}{}{%
+  \put(0,0){\begin{tikzpicture}[overlay]
     \ifosu@framelogo
       \node[opacity=0.85,anchor=north east,xshift=-6pt,yshift=-1pt]
-        at (current page.north east)
+        at (\the\paperwidth,0)
         {\osu@icon{\includegraphics[height=\osu@framelogoheight]{\osu@framelogofile}}{}};
     \fi
     \ifosu@showlab
-      \node[opacity=0.6,anchor=south west,xshift=4pt]
-        at (current page.south west)
+      \node[opacity=0.6,anchor=south west,xshift=4pt] at (0,-\the\paperheight)
         {\osu@icon{\includegraphics[height=\osu@lablogoheight]{\osu@lablogo}}{}};
     \else\ifosu@footer\ifdefined\insertcourseid
       \node[anchor=south west,xshift=8pt,yshift=6pt,
-            font=\scriptsize\sffamily,text=osunote]
-        at (current page.south west)
+            font=\scriptsize\sffamily,text=osunote] at (0,-\the\paperheight)
         {\insertcourseid\ \textperiodcentered\ \insertshorttitle};
     \fi\fi\fi
-  \end{tikzpicture}%
-}
+  \end{tikzpicture}}}\fi}
 
 %==============================================================================
 % 5. Teaching metadata
