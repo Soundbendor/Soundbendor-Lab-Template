@@ -87,11 +87,13 @@
 \osu@tmp
 
 % --- Fonts: metropolis is designed for Fira Sans. Under XeLaTeX/LuaLaTeX
-%     metropolis loads it itself; under pdfLaTeX we load the Type 1 version.
+%     metropolis loads it itself (Light for text, Regular for bold); under
+%     pdfLaTeX we load the Type 1 version with the same two weights.
 \ifdefstring{\osu@font}{fira}{%
   \ifpdftex
     \RequirePackage[T1]{fontenc}
-    \RequirePackage[sfdefault]{FiraSans}
+    \RequirePackage[sfdefault,light]{FiraSans}
+    \def\bfseries@sf{m}% bold = Fira Sans Regular, as metropolis does
     \RequirePackage[scale=0.85]{FiraMono}
   \fi
 }{}

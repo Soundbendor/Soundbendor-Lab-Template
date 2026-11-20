@@ -63,7 +63,7 @@ Teaching mode uses course metadata in place of subtitle, author and date:
 | `footer` | `true`, `false` | Teaching: "CS 101 · Title" bottom-left |
 | `bullets` | `square`, `circle` | Itemize bullet family |
 | `enumerate` | `circle`, `arabic`, `Alph`, `alph`, `roman`, `Roman` | Default enumerate label (`circle` = numbers in filled Beaver circles, as in v1). Mini-templates like `[a)]` stay plain |
-| `font` | `fira`, `default` | Fira Sans (the intended Metropolis font) or Computer Modern Sans |
+| `font` | `fira`, `default` | Fira Sans Light with Regular for bold (the Metropolis look, same under pdfLaTeX, XeLaTeX and LuaLaTeX) or Computer Modern Sans |
 | `code` | `Python`, `C++`, `Java`, any listings language | Default code language |
 | `todo` | `true`, `false` | Show or hide `\todo{}` notes |
 | `logopath` | `sty/logo/` | Where the logo files live |
@@ -195,7 +195,7 @@ Load biblatex in the deck as usual; IEEE style is recommended. The style detects
 - New:
   - `\alert` is Beaver (v1 used the lighter Solar Flare).
   - All-white Cascades logo for the orange title bar (`OSU-cascades-allwhite.png`).
-  - Fira Sans under pdfLaTeX.
+  - Fira Sans Light under pdfLaTeX too (v1 fell back to Computer Modern Sans there), so every engine gives the same look.
   - `paddletail` and `bucktooth` colors.
   - OSU pgfplots color cycle.
   - Unnumbered "References" continuation frames.
