@@ -27,6 +27,7 @@
 %   linkline  = true | false                underline web links (not colour alone)
 %   bib       = refs.bib                    load biblatex with this .bib (comma list ok)
 %   cite      = numeric | hidden | inline   citation style (see section 14)
+%   itemsep   = 4pt                         space between list items (nested: half)
 %   blockskip = 4pt                         space above and below boxes, blocks and code
 %
 % The same switches also work as commands in the preamble:
@@ -64,6 +65,7 @@
 \def\osu@lang{en-US}
 \def\osu@bib{}
 \def\osu@cite{numeric}
+\def\osu@itemsep{4pt}
 \def\osu@blockskip{4pt}   % space above and below boxes, blocks and code (blockskip=...)
 
 \pgfkeys{
@@ -85,6 +87,7 @@
   lang/.store in    = \osu@lang,
   bib/.store in     = \osu@bib,
   cite/.code        = {\lowercase{\def\osu@cite{#1}}},
+  itemsep/.store in = \osu@itemsep,
   blockskip/.store in = \osu@blockskip,
   linkline/.is if   = osu@linkline,
 }
@@ -364,7 +367,9 @@
 \ifdefstring{\osu@enumerate}{roman}{\setbeamertemplate{enumerate item}{\roman{enumi}.}}{}
 \ifdefstring{\osu@enumerate}{Roman}{\setbeamertemplate{enumerate item}{\Roman{enumi}.}}{}
 
-% Spacing (v1 values)
+% Spacing: margins from v1. Space between items is the itemsep option
+% (default 4pt; v1 used 0pt, beamer 3pt); nested lists get half of it.
+% It can shrink by 1pt so a full slide still fits.
 \setlength\leftmargini  {2em}
 \setlength\leftmarginii {2em}
 \setlength\leftmarginiii{2em}
@@ -374,16 +379,16 @@
 \def\@listi{\leftmargin\leftmargini
             \topsep -4\p@ \@plus0\p@ \@minus0\p@
             \parsep 0\p@
-            \itemsep0\p@ \@plus0\p@ \@minus0\p@}
+            \itemsep\osu@itemsep \@plus1\p@ \@minus1\p@}
 \let\@listI\@listi
 \def\@listii{\leftmargin\leftmarginii
              \topsep 2\p@ \@plus1\p@ \@minus2\p@
              \parsep 0\p@ \@plus\p@
-             \itemsep\parsep}
+             \itemsep\dimexpr\osu@itemsep/2\relax}
 \def\@listiii{\leftmargin\leftmarginiii
               \topsep 2\p@ \@plus1\p@ \@minus2\p@
               \parsep 0\p@ \@plus\p@
-              \itemsep\parsep}
+              \itemsep\dimexpr\osu@itemsep/2\relax}
 
 % Bullets
 \setbeamercolor{item}{fg=beaver!90}

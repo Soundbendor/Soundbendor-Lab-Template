@@ -74,6 +74,7 @@ Teaching mode uses course metadata in place of subtitle, author and date:
 | `blockskip` | `4pt`, any length | Space above and below every box, block and code listing. Teaching decks read better with more air, e.g. `blockskip=12pt` |
 | `bib` | file name(s) | Load biblatex with this `.bib` file (see [Bibliography](#bibliography)) |
 | `cite` | `numeric`, `hidden`, `inline` | Citation style: [1], none, or (Author, Year) |
+| `itemsep` | `4pt`, any length | Space between list items; nested lists get half. `itemsep=0pt` gives the tight v1 lists |
 
 The v1 commands `\campus{Cascades}` and `\presentmode{teaching}` still work in the preamble.
 
@@ -260,6 +261,7 @@ What each deck still needs:
   - `paddletail` and `bucktooth` colors.
   - OSU pgfplots color cycle.
   - Unnumbered "References" continuation frames.
+  - List items have 4pt between them (v1: 0pt), set with `itemsep`.
   - Accessibility: contrast-safe text colours, underlined links, PDF language and title, Unicode text, spoken icon labels, `\figalt`.
 
 ## Poster template
