@@ -25,6 +25,7 @@
 %   metropolis= {...}                       extra options passed to metropolis
 %   lang      = en-US                       document language (PDF /Lang)
 %   linkline  = true | false                underline web links (not colour alone)
+%   titlebold = true | false                frame and section titles in bold (Regular)
 %   bib       = refs.bib                    load biblatex with this .bib (comma list ok)
 %   cite      = numeric | hidden | inline   citation style (see section 14)
 %   itemsep   = 4pt                         space between list items (nested: half)
@@ -50,6 +51,7 @@
 \newif\ifosu@todo        \osu@todotrue
 \newif\ifosu@legacy      \osu@legacyfalse
 \newif\ifosu@linkline    \osu@linklinetrue
+\newif\ifosu@titlebold   \osu@titleboldtrue
 \newif\ifosu@research    % set at \begin{document}
 \newif\ifosu@showlab     % set at \begin{document}
 
@@ -90,6 +92,7 @@
   itemsep/.store in = \osu@itemsep,
   blockskip/.store in = \osu@blockskip,
   linkline/.is if   = osu@linkline,
+  titlebold/.is if  = osu@titlebold,
 }
 \ProcessPgfPackageOptions{/osu}
 
@@ -222,6 +225,14 @@
 
 % No roman numerals on continued frames ([allowframebreaks])
 \setbeamertemplate{frametitle continuation}{}
+
+% Frame and section titles one weight up from the Light body text (bold is
+% Fira Sans Regular), so they stay legible when projected. titlebold=false
+% keeps the metropolis Light titles.
+\ifosu@titlebold
+  \setbeamerfont{frametitle}{series=\bfseries}
+  \setbeamerfont{section title}{series=\bfseries}
+\fi
 
 % Blocks: rounded, thin grey outline, soft shadow (tcolorbox). Title and body
 % colours come from the beamer colour theme, so metropolis block=fill or

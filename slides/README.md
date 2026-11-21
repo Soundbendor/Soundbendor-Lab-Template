@@ -71,6 +71,7 @@ Teaching mode uses course metadata in place of subtitle, author and date:
 | `metropolis` | `{...}` | Passed to Metropolis, e.g. `metropolis={progressbar=frametitle}` |
 | `lang` | `en-US`, any language tag | Document language written into the PDF, so screen readers use the right voice |
 | `linkline` | `true`, `false` | Underline web links, so they are not marked by colour alone |
+| `titlebold` | `true`, `false` | Frame and section titles in bold (Fira Sans Regular, one step up from the Light body). `false` gives the metropolis Light titles |
 | `blockskip` | `4pt`, any length | Space above and below every box, block and code listing. Teaching decks read better with more air, e.g. `blockskip=12pt` |
 | `bib` | file name(s) | Load biblatex with this `.bib` file (see [Bibliography](#bibliography)) |
 | `cite` | `numeric`, `hidden`, `inline` | Citation style: [1], none, or (Author, Year) |
@@ -262,6 +263,7 @@ What each deck still needs:
   - OSU pgfplots color cycle.
   - Unnumbered "References" continuation frames.
   - List items have 4pt between them (v1: 0pt), set with `itemsep`.
+  - Frame and section titles are bold (Fira Sans Regular), set with `titlebold`.
   - Accessibility: contrast-safe text colours, underlined links, PDF language and title, Unicode text, spoken icon labels, `\figalt`.
 
 ## Poster template
