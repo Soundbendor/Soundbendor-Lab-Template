@@ -25,6 +25,8 @@
 %   metropolis= {...}                       extra options passed to metropolis
 %   lang      = en-US                       document language (PDF /Lang)
 %   linkline  = true | false                underline web links (not colour alone)
+%   bib       = refs.bib                    load biblatex with this .bib (comma list ok)
+%   cite      = numeric | hidden | inline   citation style (see section 14)
 %
 % The same switches also work as commands in the preamble:
 %   \campus{Cascades}   \presentmode{teaching}
@@ -59,6 +61,8 @@
 \def\osu@logopath{sty/logo/}
 \def\osu@metro{}
 \def\osu@lang{en-US}
+\def\osu@bib{}
+\def\osu@cite{numeric}
 
 \pgfkeys{
   /osu/.cd,
@@ -77,6 +81,8 @@
   logopath/.store in= \osu@logopath,
   metropolis/.store in = \osu@metro,
   lang/.store in    = \osu@lang,
+  bib/.store in     = \osu@bib,
+  cite/.code        = {\lowercase{\def\osu@cite{#1}}},
   linkline/.is if   = osu@linkline,
 }
 \ProcessPgfPackageOptions{/osu}
@@ -738,12 +744,47 @@
 \SetKwProg{Repeat}{repeat until}{\ do}{}
 
 %==============================================================================
-% 14. Bibliography (applied only if you load biblatex)
+% 14. Bibliography
 %==============================================================================
-% Recommended:  \usepackage[style=ieee]{biblatex}  \addbibresource{refs.bib}
-%   - numbered entries [1], a little space between them
-%   - authors bold, titles in Stratosphere (IEEE quotes kept), DOIs/URLs linked
-%   - in-text citations small, bold, Beaver
+% Give the .bib file as an option and pick a citation style; the style loads
+% biblatex for you:
+%   \usepackage[bib=refs.bib]{sty/osu}                 numeric (default)
+%   \usepackage[bib=refs.bib, cite=hidden]{sty/osu}
+%   \usepackage[bib=refs.bib, cite=inline]{sty/osu}
+% and end the deck with \referencesframe (or \referencesframe[Further Reading]).
+%
+%   numeric  \cite gives [1]; the reference list is numbered in citation order
+%            (biblatex-ieee).
+%   hidden   \cite prints nothing on the slide but still adds the entry to
+%            the reference list, which is sorted alphabetically by author
+%            with no numbers. For talks where citations clutter the slides.
+%   inline   \cite gives (Whiskers et al., 2024); the reference list is
+%            sorted alphabetically by author (biblatex authoryear).
+% Switching style needs no change to the slides: keep using \cite.
+% If you load biblatex yourself instead, the formatting below still applies.
+\ifboolexpr{test {\ifdefstring{\osu@cite}{numeric}}
+         or test {\ifdefstring{\osu@cite}{hidden}}
+         or test {\ifdefstring{\osu@cite}{inline}}}{}{%
+  \PackageError{sty/osu}{Unknown cite=\osu@cite}%
+    {Use cite=numeric, cite=hidden or cite=inline.}%
+  \def\osu@cite{numeric}}
+\ifx\osu@bib\@empty\else
+  \ifdefstring{\osu@cite}{numeric}{%
+    \RequirePackage[style=ieee, backend=biber]{biblatex}%
+  }{%
+    \RequirePackage[style=authoryear, backend=biber, maxcitenames=2,
+      uniquename=false, uniquelist=false, dashed=false]{biblatex}%
+  }%
+  \forcsvlist{\addbibresource}{\osu@bib}
+\fi
+
+% Reference slide(s): breaks across frames when long, unnumbered "References"
+% on each page.
+\newcommand{\referencesframe}[1][References]{%
+  \begin{frame}[allowframebreaks]{#1}
+    \printbibliography[heading=none]
+  \end{frame}}
+
 \newcommand{\osu@bibnames}{%   bold author names in the reference list
   \renewcommand*{\mkbibnamegiven}[1]{\textbf{##1}}%
   \renewcommand*{\mkbibnamefamily}[1]{\textbf{##1}}}
@@ -762,8 +803,25 @@
     \setbeamercolor{bibliography entry note}{fg=paddletail!70}
     \setlength{\bibitemsep}{4pt}%
     \AtBeginBibliography{\scriptsize\osu@bibnames}%
-    \AtEveryCite{\footnotesize\bfseries\color{beaver}}%
+    \osu@citestyle
   }{}%
+}
+\newcommand{\osu@citestyle}{%
+  \ifdefstring{\osu@cite}{numeric}{%
+    \AtEveryCite{\footnotesize\bfseries\color{beaver}}}{}%
+  \ifdefstring{\osu@cite}{inline}{%
+    % (Author, Year) in small Beaver text; \cite behaves like \parencite
+    \AtEveryCite{\footnotesize\color{beaver}}%
+    \renewcommand*{\nameyeardelim}{\addcomma\space}%
+    \let\cite\parencite \let\Cite\Parencite}{}%
+  \ifdefstring{\osu@cite}{hidden}{%
+    % every citation command still records the entry, but prints nothing
+    % (and removes the space before it)
+    \setbeamertemplate{bibliography item}{}%
+    \def\do##1{\DeclareCiteCommand{##1}{\unspace}{}{}{}}%
+    \docsvlist{\cite,\Cite,\parencite,\Parencite,\textcite,\Textcite,
+      \autocite,\Autocite,\footcite,\footcitetext,\smartcite,\Smartcite,
+      \supercite}}{}%
 }
 
 \endinput

@@ -71,6 +71,8 @@ Teaching mode uses course metadata in place of subtitle, author and date:
 | `metropolis` | `{...}` | Passed to Metropolis, e.g. `metropolis={progressbar=frametitle}` |
 | `lang` | `en-US`, any language tag | Document language written into the PDF, so screen readers use the right voice |
 | `linkline` | `true`, `false` | Underline web links, so they are not marked by colour alone |
+| `bib` | file name(s) | Load biblatex with this `.bib` file (see [Bibliography](#bibliography)) |
+| `cite` | `numeric`, `hidden`, `inline` | Citation style: [1], none, or (Author, Year) |
 
 The v1 commands `\campus{Cascades}` and `\presentmode{teaching}` still work in the preamble.
 
@@ -167,18 +169,34 @@ Math: `\argmin`, `\argmax`, `\argminl`, `\argmaxl` (limits forced inline),
 
 ## Bibliography
 
-Load biblatex in the deck as usual; IEEE style is recommended. The style detects biblatex and formats:
-
-- in-text citations: small, bold, Beaver, e.g. **[1]**
-- reference list: numbered [1], [2], ... with a little space between entries;
-  authors bold, titles in Stratosphere (IEEE's quotation marks kept), DOIs and URLs as links
+Give the `.bib` file and a citation style as options. The style loads biblatex for you:
 
 ```latex
-\usepackage[style=ieee]{biblatex}
-\addbibresource{refs.bib}
+\usepackage[campus=corvallis, mode=research, bib=refs.bib, cite=numeric]{sty/osu}
 ...
-\begin{frame}[allowframebreaks]{References}\printbibliography[heading=none]\end{frame}
+\cite{whiskers2024attention}      % in the slides
+...
+\referencesframe                  % last slide; or \referencesframe[Further Reading]
 ```
+
+| `cite=` | On the slide | Reference list |
+|---|---|---|
+| `numeric` (default) | **[1]** in small bold Beaver | numbered [1], [2], ... in citation order (IEEE) |
+| `hidden` | nothing (the space before `\cite` is removed too) | alphabetical by author, no numbers |
+| `inline` | (Whiskers et al., 2024) in small Beaver | alphabetical by author (author–year) |
+
+To switch styles, change the option and rebuild; the slides keep using `\cite`.
+In `hidden` mode every cited entry still appears in the reference list. That
+suits talks where citations would clutter the slides. `\parencite`, `\textcite`
+and the other biblatex citation commands work in every mode.
+
+In every mode the list has a little space between entries, bold authors, titles
+in Stratosphere (with their quotation marks), and DOIs and URLs as links.
+`bib` takes several files as well: `bib={refs.bib,more.bib}`.
+`\referencesframe` breaks onto extra slides when the list is long.
+
+If you load biblatex yourself instead (`\usepackage[style=...]{biblatex}`), the
+formatting still applies; leave out `bib`.
 
 ## Accessibility
 

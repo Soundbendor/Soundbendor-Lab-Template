@@ -4,10 +4,8 @@
 % Build:  latexmk -pdf research.tex   (biber runs automatically)
 %==============================================================================
 \documentclass[10pt,aspectratio=169,xcolor=table]{beamer}
-\usepackage[campus=corvallis, mode=research]{sty/osu}
-
-\usepackage[style=ieee]{biblatex}
-\addbibresource{refs.bib}
+\usepackage[campus=corvallis, mode=research,
+            bib=refs.bib, cite=numeric]{sty/osu}   % cite = numeric | hidden | inline
 
 \title{Purr-ceptual Evaluation}
 \subtitle{Detecting Feline Disapproval of Human Playlists with Very Deep Learning}
@@ -269,8 +267,6 @@ def loss(y_hat, y):
   {\small Appendix slides are not counted in the frame total.}
 \end{frame}
 
-\begin{frame}[allowframebreaks]{References}
-  \printbibliography[heading=none]
-\end{frame}
+\referencesframe
 
 \end{document}
