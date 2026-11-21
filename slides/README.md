@@ -71,6 +71,7 @@ Teaching mode uses course metadata in place of subtitle, author and date:
 | `metropolis` | `{...}` | Passed to Metropolis, e.g. `metropolis={progressbar=frametitle}` |
 | `lang` | `en-US`, any language tag | Document language written into the PDF, so screen readers use the right voice |
 | `linkline` | `true`, `false` | Underline web links, so they are not marked by colour alone |
+| `blockskip` | `4pt`, any length | Space above and below every box, block and code listing. Teaching decks read better with more air, e.g. `blockskip=12pt` |
 | `bib` | file name(s) | Load biblatex with this `.bib` file (see [Bibliography](#bibliography)) |
 | `cite` | `numeric`, `hidden`, `inline` | Citation style: [1], none, or (Author, Year) |
 

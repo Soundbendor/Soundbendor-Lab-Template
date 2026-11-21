@@ -27,6 +27,7 @@
 %   linkline  = true | false                underline web links (not colour alone)
 %   bib       = refs.bib                    load biblatex with this .bib (comma list ok)
 %   cite      = numeric | hidden | inline   citation style (see section 14)
+%   blockskip = 4pt                         space above and below boxes, blocks and code
 %
 % The same switches also work as commands in the preamble:
 %   \campus{Cascades}   \presentmode{teaching}
@@ -63,6 +64,7 @@
 \def\osu@lang{en-US}
 \def\osu@bib{}
 \def\osu@cite{numeric}
+\def\osu@blockskip{4pt}   % space above and below boxes, blocks and code (blockskip=...)
 
 \pgfkeys{
   /osu/.cd,
@@ -83,6 +85,7 @@
   lang/.store in    = \osu@lang,
   bib/.store in     = \osu@bib,
   cite/.code        = {\lowercase{\def\osu@cite{#1}}},
+  blockskip/.store in = \osu@blockskip,
   linkline/.is if   = osu@linkline,
 }
 \ProcessPgfPackageOptions{/osu}
@@ -231,7 +234,8 @@
     colback=osu@bbbg, colbacktitle=osu@btbg, coltitle=osu@btfg,
     fonttitle=\usebeamerfont*{block title}, titlerule=0.4pt,
     toptitle=1.5pt, bottomtitle=1.5pt, left=5pt, right=5pt, top=3pt, bottom=3pt,
-    drop fuzzy shadow=black!25, before skip=4pt, after skip=6pt, osu@blocktitle]
+    drop fuzzy shadow=black!25, before skip=\osu@blockskip,
+    after skip=\dimexpr\osu@blockskip+2pt\relax, osu@blocktitle]
   \usebeamercolor[fg]{normal text}}
 \setbeamertemplate{block begin}{\osu@blockbegin{block title}{block body}}
 \setbeamertemplate{block end}{\end{tcolorbox}}
@@ -477,7 +481,7 @@
     title={#2\ifstrempty{#3}{}{\ #3}},
     titlerule=0pt, toptitle=1.5pt, bottomtitle=1.5pt,
     left=6pt, right=6pt, top=3pt, bottom=3pt,
-    before skip=4pt, after skip=4pt,
+    before skip=\osu@blockskip, after skip=\osu@blockskip,
   },
 }
 \newcommand{\osunewbox}[4]{%
@@ -712,7 +716,7 @@
 
 \tcbset{osucode/.style={enhanced, arc=4pt, boxrule=0.4pt,
   colback=coastline!15, colframe=coastline!80, left=4pt, right=4pt,
-  top=2pt, bottom=2pt, before skip=4pt, after skip=4pt,
+  top=2pt, bottom=2pt, before skip=\osu@blockskip, after skip=\osu@blockskip,
   drop fuzzy shadow=black!30}}
 \BeforeBeginEnvironment{lstlisting}{\begin{tcolorbox}[osucode]}
 \AfterEndEnvironment{lstlisting}{\end{tcolorbox}}
